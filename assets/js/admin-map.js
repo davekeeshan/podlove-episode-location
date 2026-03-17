@@ -301,6 +301,39 @@
   }
 
   /**
+   * Clear all location fields and remove the marker for a given rel type.
+   */
+  function clearLocation(rel) {
+    var fields = ["name", "lat", "lng", "address", "country", "osm"];
+    for (var i = 0; i < fields.length; i++) {
+      var field = document.getElementById(
+        "podlove-location-" + fields[i] + "-" + rel
+      );
+      if (field) field.value = "";
+    }
+
+    var state = tabs[rel];
+    if (state && state.marker) {
+      state.map.removeLayer(state.marker);
+      state.marker = null;
+    }
+
+    if (state && state.map) {
+      state.map.setView([defaultLat, defaultLng], defaultZoom);
+    }
+
+    var searchInput = document.getElementById(
+      "podlove-location-search-" + rel
+    );
+    if (searchInput) searchInput.value = "";
+
+    var resultsContainer = document.getElementById(
+      "podlove-location-search-results-" + rel
+    );
+    if (resultsContainer) resultsContainer.innerHTML = "";
+  }
+
+  /**
    * Switch to a tab and lazy-initialize its map.
    */
   function switchTab(rel) {
@@ -349,6 +382,13 @@
       }
     );
 
+    // Clear location buttons
+    $(document).on("click", ".podlove-location-clear-btn", function (e) {
+      e.preventDefault();
+      var rel = $(this).data("rel");
+      clearLocation(rel);
+    });
+
     // Handle postbox toggle (meta box collapse/expand)
     $(document).on("postbox-toggled", function (e, postbox) {
       if (postbox.id === "podlove_episode_location") {
@@ -366,8 +406,12 @@
   $(document).ready(function () {
     if (document.getElementById("podlove-episode-location-wrapper")) {
       bindEvents();
-      // Initialize the subject map immediately (it's the default active tab)
       initMapForRel("subject");
+    }
+
+    if (document.getElementById("podlove-podcast-location-wrapper")) {
+      bindEvents();
+      initMapForRel("podcast");
     }
   });
 })(jQuery);

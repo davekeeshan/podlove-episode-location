@@ -103,6 +103,8 @@ class Meta_Box
             $data = isset($all_data[$rel]) ? $all_data[$rel] : [];
             $this->save_rel($episode->id, $rel, $data);
         }
+
+        Podcast_Settings::flush_podlove_feed_cache();
     }
 
     /**
@@ -279,9 +281,14 @@ class Meta_Box
                     </div>
                 </div>
 
-                <p class="podlove-location-hint">
-                    <?php esc_html_e('Search for a location or click on the map to set the pin. Drag the marker to adjust. Country and OSM ID are auto-filled from search results.', 'podlove-episode-location'); ?>
-                </p>
+                <div class="podlove-location-actions">
+                    <button type="button" class="button podlove-location-clear-btn" data-rel="<?php echo esc_attr($rel); ?>">
+                        <?php esc_html_e('Clear Location', 'podlove-episode-location'); ?>
+                    </button>
+                    <span class="podlove-location-hint">
+                        <?php esc_html_e('Search for a location or click on the map to set the pin. Drag the marker to adjust.', 'podlove-episode-location'); ?>
+                    </span>
+                </div>
             </div>
         </div>
         <?php

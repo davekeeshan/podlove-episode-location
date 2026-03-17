@@ -123,6 +123,9 @@ class Template_Extensions
     /**
      * Retrieve a single field from a location record.
      *
+     * For 'creator', falls back to the podcast-level default if the episode
+     * has no explicit creator location.
+     *
      * @param int    $episode_id
      * @param string $rel
      * @param string $field
@@ -133,6 +136,17 @@ class Template_Extensions
     {
         $location = Location_Model::find_by_episode_id_and_rel($episode_id, $rel);
 
-        return $location && isset($location->{$field}) ? $location->{$field} : '';
+        if ($location && isset($location->{$field}) && $location->{$field} !== '') {
+            return $location->{$field};
+        }
+
+        // Fall back to podcast default for creator location only.
+        if ($rel === 'creator' && Podcast_Settings::has_podcast_location()) {
+            $podcast_data = Podcast_Settings::get_podcast_location();
+
+            return $podcast_data[$field] ?? '';
+        }
+
+        return '';
     }
 }

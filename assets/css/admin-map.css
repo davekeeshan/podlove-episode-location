@@ -172,10 +172,30 @@
     background-color: #fff;
 }
 
+/* ---- Actions row (clear button + hint) ---- */
+.podlove-location-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.podlove-location-clear-btn {
+    color: #a00 !important;
+    border-color: #a00 !important;
+    white-space: nowrap;
+}
+
+.podlove-location-clear-btn:hover {
+    background: #a00 !important;
+    color: #fff !important;
+    border-color: #a00 !important;
+}
+
 /* ---- Hint text ---- */
 .podlove-location-hint {
     font-size: 12px;
     color: #666;
     font-style: italic;
-    margin-top: 4px;
+    margin-top: 0;
 }

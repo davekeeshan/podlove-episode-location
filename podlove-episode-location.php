@@ -78,6 +78,7 @@ function podlove_episode_location_init()
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-meta-box.php';
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-template-extensions.php';
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-feed-extension.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-podcast-settings.php';
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-episode-location.php';
 
     Episode_Location::instance();

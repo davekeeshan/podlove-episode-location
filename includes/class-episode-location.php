@@ -2,6 +2,8 @@
 
 namespace PodloveEpisodeLocation;
 
+use Podlove\Settings\Expert\Tabs;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -18,6 +20,27 @@ class Episode_Location
         new Meta_Box();
         new Template_Extensions();
         new Feed_Extension();
+
+        Podcast_Settings::register_early_hooks();
+        add_filter('podlove_podcast_settings_tabs', [$this, 'register_podcast_settings_tab']);
+    }
+
+    /**
+     * Register the Location tab on the Podlove Podcast Settings page.
+     *
+     * @param Tabs $tabs
+     *
+     * @return Tabs
+     */
+    public function register_podcast_settings_tab($tabs)
+    {
+        $tabs->addTab(new Podcast_Settings(
+            'location',
+            __('Location', 'podlove-episode-location'),
+            false
+        ));
+
+        return $tabs;
     }
 
     public static function instance()
