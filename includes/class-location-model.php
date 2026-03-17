@@ -41,7 +41,7 @@ class Location_Model
     }
 
     /**
-     * Create the database table if it doesn't exist, or migrate columns.
+     * Create the database table if it doesn't exist.
      */
     public static function build()
     {
@@ -65,29 +65,6 @@ class Location_Model
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
         dbDelta($sql);
-
-        // Migrate legacy rows that lack a rel value
-        self::migrate_legacy_data();
-    }
-
-    /**
-     * Migrate data from the old single-location schema.
-     *
-     * Old schema had no `rel` column. If we just added it with DEFAULT 'subject',
-     * existing rows get the default. But we also need to handle the case where
-     * the old table had a simple `episode_id` index instead of the unique key.
-     */
-    private static function migrate_legacy_data()
-    {
-        global $wpdb;
-
-        $table = self::table_name();
-
-        // Check if old idx_episode_id index exists and drop it
-        $indexes = $wpdb->get_results("SHOW INDEX FROM {$table} WHERE Key_name = 'idx_episode_id'");
-        if (!empty($indexes)) {
-            $wpdb->query("ALTER TABLE {$table} DROP INDEX idx_episode_id");
-        }
     }
 
     /**
@@ -141,17 +118,6 @@ class Location_Model
     }
 
     /**
-     * Backwards-compatible: find by episode ID (returns subject location).
-     *
-     * @param int $episode_id
-     * @return Location_Model|null
-     */
-    public static function find_by_episode_id($episode_id)
-    {
-        return self::find_by_episode_id_and_rel($episode_id, 'subject');
-    }
-
-    /**
      * Save the current record (insert or update).
      */
     public function save()
@@ -202,13 +168,13 @@ class Location_Model
         $model = new self();
         $model->id               = (int) $row->id;
         $model->episode_id       = (int) $row->episode_id;
-        $model->rel              = isset($row->rel) ? $row->rel : 'subject';
+        $model->rel              = $row->rel;
         $model->location_name    = $row->location_name;
         $model->location_lat     = $row->location_lat;
         $model->location_lng     = $row->location_lng;
         $model->location_address = $row->location_address;
-        $model->location_country = isset($row->location_country) ? $row->location_country : '';
-        $model->location_osm     = isset($row->location_osm) ? $row->location_osm : '';
+        $model->location_country = $row->location_country;
+        $model->location_osm     = $row->location_osm;
         return $model;
     }
 }

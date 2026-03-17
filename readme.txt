@@ -4,7 +4,7 @@ Tags: podcast, podlove, location, map, openstreetmap
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 1.0.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -56,20 +56,10 @@ Yes. You can set just a subject location, just a creator location, both, or neit
 
 == Changelog ==
 
-= 2.0.0 =
+= 1.0.0 =
 * Registers as a Podlove module on the Modules settings page
 * Dual location support: Subject and Creator
 * Tabbed UI in the episode editor meta box
 * OSM identifier and country code capture from Nominatim
 * Podcasting 2.0 feed tags with rel, osm, and country attributes
 * New template tags: locationSubjectName, locationCreatorName, etc.
-* Legacy template tags preserved for backwards compatibility
-* Database schema upgrade with migration support
-
-= 1.0.0 =
-* Initial release
-* Interactive map with Leaflet.js
-* Nominatim location search
-* Draggable marker with reverse geocoding
-* Podlove template tag integration
-* Podcasting 2.0 feed location tags

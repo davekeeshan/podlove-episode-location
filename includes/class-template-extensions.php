@@ -21,11 +21,6 @@ if (!defined('ABSPATH')) {
  *   {{ episode.locationCreatorLng }}
  *   {{ episode.locationCreatorAddress }}
  *
- * Legacy accessors (map to subject location for backwards compatibility):
- *   {{ episode.locationName }}
- *   {{ episode.locationLat }}
- *   {{ episode.locationLng }}
- *   {{ episode.locationAddress }}
  */
 class Template_Extensions
 {
@@ -79,27 +74,6 @@ class Template_Extensions
             4
         );
 
-        // Legacy accessors (backwards compatible — map to subject)
-        \Podlove\Template\Episode::add_accessor(
-            'locationName',
-            [__CLASS__, 'accessor_subject_name'],
-            4
-        );
-        \Podlove\Template\Episode::add_accessor(
-            'locationLat',
-            [__CLASS__, 'accessor_subject_lat'],
-            4
-        );
-        \Podlove\Template\Episode::add_accessor(
-            'locationLng',
-            [__CLASS__, 'accessor_subject_lng'],
-            4
-        );
-        \Podlove\Template\Episode::add_accessor(
-            'locationAddress',
-            [__CLASS__, 'accessor_subject_address'],
-            4
-        );
     }
 
     // --- Subject accessors ---

@@ -16,8 +16,6 @@ A standalone WordPress plugin that adds dual episode location support (subject &
 - **OSM Data Capture** — Automatically captures `osm_type`/`osm_id` and country code from Nominatim
 - **Podlove Template Tags** — Access both subject and creator location data in Podlove templates
 - **RSS Feed Support** — Emits Podcasting 2.0 `<podcast:location>` tags with `rel`, `geo`, `osm`, and `country` attributes
-- **Backwards Compatible** — Legacy template tags still work, mapping to the subject location
-
 ## Requirements
 
 - WordPress 5.0+
@@ -71,15 +69,6 @@ You can set one location, both, or neither — only locations with data will app
 {{ episode.locationCreatorLat }}
 {{ episode.locationCreatorLng }}
 {{ episode.locationCreatorAddress }}
-```
-
-**Legacy tags** (map to subject location for backwards compatibility):
-
-```twig
-{{ episode.locationName }}
-{{ episode.locationLat }}
-{{ episode.locationLng }}
-{{ episode.locationAddress }}
 ```
 
 **Example** — display links for both locations:
@@ -138,10 +127,6 @@ The plugin uses a single table `{wp_prefix}podlove_episode_location` with a uniq
 | `location_address` | TEXT | Full address string |
 | `location_country` | VARCHAR(2) | ISO 3166-1 alpha-2 country code |
 | `location_osm` | VARCHAR(50) | OSM identifier (e.g. "R113314") |
-
-## Upgrading from v1.x
-
-Version 2.0 adds the `rel`, `location_country`, and `location_osm` columns to the database table automatically on activation. Existing location data is preserved and treated as subject locations. Legacy template tags continue to work.
 
 ## License
 

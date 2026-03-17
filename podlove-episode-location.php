@@ -3,7 +3,7 @@
  * Plugin Name: Podlove Episode Location
  * Plugin URI:  https://github.com/davekeeshan/podlove-episode-location
  * Description: Adds dual episode location (subject & creator) with interactive maps to Podlove Publisher. Registers as a Podlove module.
- * Version:     2.0.0
+ * Version:     1.0.0
  * Author:      Dave Keeshan
  * Author URI:  https://github.com/davekeeshan
  * License:     MIT
@@ -17,7 +17,7 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-define('PODLOVE_EPISODE_LOCATION_VERSION', '2.0.0');
+define('PODLOVE_EPISODE_LOCATION_VERSION', '1.0.0');
 define('PODLOVE_EPISODE_LOCATION_FILE', __FILE__);
 define('PODLOVE_EPISODE_LOCATION_DIR', plugin_dir_path(__FILE__));
 define('PODLOVE_EPISODE_LOCATION_URL', plugin_dir_url(__FILE__));
@@ -79,7 +79,7 @@ function podlove_episode_location_init()
 add_action('plugins_loaded', 'podlove_episode_location_init', 20);
 
 /**
- * Create/upgrade database table on plugin activation.
+ * Create database table on plugin activation.
  */
 function podlove_episode_location_activate()
 {
