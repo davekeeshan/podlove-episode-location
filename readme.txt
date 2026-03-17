@@ -12,19 +12,22 @@ Adds dual episode location (subject & creator) with interactive maps to Podlove 
 
 == Description ==
 
-Podlove Episode Location extends Podlove Publisher with geographic location support for podcast episodes. It registers as a proper Podlove module visible in the Modules settings page.
+Podlove Episode Location extends Podlove Publisher with geographic location support for podcast episodes and podcast-level creator metadata. It registers as a proper Podlove module visible in the Modules settings page.
 
 Features:
 
 * **Podlove Module** — Appears in Podlove's Modules page and can be toggled on/off
+* **Podcast Default Creator Location** — Set a default creator location in Podlove > Podcast Settings > Location; emitted at the RSS channel level
 * **Dual Locations** — Subject (what the episode is about) and Creator (where it was recorded)
 * **Tabbed UI** — Clean tabbed interface in the episode editor
-* **Interactive Maps** — OpenStreetMap + Leaflet.js with separate maps per location type
+* **Interactive Maps** — OpenStreetMap + Leaflet.js with separate maps per location type and podcast settings
 * **Nominatim Search** — Geocoding search with no API key required
-* **OSM Data Capture** — Auto-captures OSM identifier and country code from search results
+* **Reverse Geocoding** — Updates the human-readable name, address, and country when the pin moves
+* **OSM Data Capture** — Captures OSM identifier and country code from explicit search results
 * **Draggable Markers** — Fine-tune locations by dragging pins
-* **Template Tags** — Access both location types in Podlove templates
-* **Podcasting 2.0 Feed** — Emits `<podcast:location>` tags with rel, geo, osm, and country attributes
+* **Clear Location** — Reset a location entirely from the episode editor or podcast settings
+* **Template Tags** — Access both location types in Podlove templates; creator tags fall back to the podcast default when an episode has none
+* **Podcasting 2.0 Feed** — Emits `<podcast:location>` tags at channel and item level with rel, geo, osm, and country attributes when available
 
 **Requires Podlove Publisher** to be installed and active.
 
@@ -35,6 +38,7 @@ Features:
 3. Activate the plugin through the Plugins menu
 4. The module is auto-enabled in Podlove > Modules
 5. Edit any episode to see the Episode Location meta box with Subject and Creator tabs
+6. Optionally set a podcast-wide default creator location in Podlove > Podcast Settings > Location
 
 == Frequently Asked Questions ==
 
@@ -54,12 +58,27 @@ Your location data is preserved in the database. Re-enabling the module will res
 
 Yes. You can set just a subject location, just a creator location, both, or neither. Only locations with data will appear in the feed.
 
+= What is the podcast default creator location used for? =
+
+It is emitted at the channel level in the RSS feed and is also used as a fallback in Podlove template tags when an episode has no explicit creator location.
+
+= When is the OSM ID set? =
+
+The OSM ID is captured when you choose an explicit search result. If you manually click or drag the pin, the visible location fields update from reverse geocoding, but the OSM ID is cleared until a specific search result is chosen again.
+
+= Can I clear or disable a location after setting it? =
+
+Yes. Use the Clear Location button in the episode editor or podcast settings to remove the current location. If all fields are empty when saved, the location is removed.
+
 == Changelog ==
 
 = 1.0.0 =
 * Registers as a Podlove module on the Modules settings page
 * Dual location support: Subject and Creator
 * Tabbed UI in the episode editor meta box
-* OSM identifier and country code capture from Nominatim
-* Podcasting 2.0 feed tags with rel, osm, and country attributes
+* Podcast settings Location tab with default creator location
+* Reverse geocoding for name, address, and country
+* OSM identifier capture from explicit search results
+* Clear Location support in episode editor and podcast settings
+* Podcasting 2.0 feed tags at channel and item level with rel, geo, osm, and country attributes
 * New template tags: locationSubjectName, locationCreatorName, etc.
