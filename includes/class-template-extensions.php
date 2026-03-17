@@ -2,6 +2,8 @@
 
 namespace PodloveEpisodeLocation;
 
+use Podlove\Template\Episode;
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -20,7 +22,6 @@ if (!defined('ABSPATH')) {
  *   {{ episode.locationCreatorLat }}
  *   {{ episode.locationCreatorLng }}
  *   {{ episode.locationCreatorAddress }}
- *
  */
 class Template_Extensions
 {
@@ -31,49 +32,48 @@ class Template_Extensions
         }
 
         // Subject location accessors
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationSubjectName',
             [__CLASS__, 'accessor_subject_name'],
             4
         );
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationSubjectLat',
             [__CLASS__, 'accessor_subject_lat'],
             4
         );
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationSubjectLng',
             [__CLASS__, 'accessor_subject_lng'],
             4
         );
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationSubjectAddress',
             [__CLASS__, 'accessor_subject_address'],
             4
         );
 
         // Creator location accessors
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationCreatorName',
             [__CLASS__, 'accessor_creator_name'],
             4
         );
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationCreatorLat',
             [__CLASS__, 'accessor_creator_lat'],
             4
         );
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationCreatorLng',
             [__CLASS__, 'accessor_creator_lng'],
             4
         );
-        \Podlove\Template\Episode::add_accessor(
+        Episode::add_accessor(
             'locationCreatorAddress',
             [__CLASS__, 'accessor_creator_address'],
             4
         );
-
     }
 
     // --- Subject accessors ---
@@ -126,11 +126,13 @@ class Template_Extensions
      * @param int    $episode_id
      * @param string $rel
      * @param string $field
+     *
      * @return string
      */
     private static function get_field($episode_id, $rel, $field)
     {
         $location = Location_Model::find_by_episode_id_and_rel($episode_id, $rel);
-        return $location && isset($location->$field) ? $location->$field : '';
+
+        return $location && isset($location->{$field}) ? $location->{$field} : '';
     }
 }

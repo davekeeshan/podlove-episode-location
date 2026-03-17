@@ -23,10 +23,10 @@ if (!defined('ABSPATH')) {
  */
 class Module_Registration
 {
-    const MODULE_KEY = 'episode_location_external';
-    const MODULE_NAME = 'Episode Location';
-    const MODULE_DESCRIPTION = 'Add geographic locations (subject and creator) to podcast episodes with interactive maps, Nominatim search, and Podcasting 2.0 &lt;podcast:location&gt; feed tags.';
-    const MODULE_GROUP = 'metadata';
+    public const MODULE_KEY = 'episode_location_external';
+    public const MODULE_NAME = 'Episode Location';
+    public const MODULE_DESCRIPTION = 'Add geographic locations (subject and creator) to podcast episodes with interactive maps, Nominatim search, and Podcasting 2.0 &lt;podcast:location&gt; feed tags.';
+    public const MODULE_GROUP = 'metadata';
 
     public function __construct()
     {
@@ -86,19 +86,19 @@ class Module_Registration
         $pagehook = 'podlove_settings_modules_handle';
 
         add_settings_section(
-            'podlove_setting_module_group_' . self::MODULE_GROUP,
+            'podlove_setting_module_group_'.self::MODULE_GROUP,
             ucwords(self::MODULE_GROUP),
             function () {},
             $pagehook
         );
 
         add_settings_field(
-            'podlove_setting_module_' . self::MODULE_KEY,
+            'podlove_setting_module_'.self::MODULE_KEY,
             // Title: checkbox + label, matching Podlove's format
-            '<input name="podlove_active_modules[' . self::MODULE_KEY . ']" '
-                . 'id="' . self::MODULE_KEY . '" type="checkbox" '
-                . checked(self::is_active(), true, false) . '>'
-                . sprintf(
+            '<input name="podlove_active_modules['.self::MODULE_KEY.']" '
+                .'id="'.self::MODULE_KEY.'" type="checkbox" '
+                .checked(self::is_active(), true, false).'>'
+                .sprintf(
                     '<label for="%s">%s</label><a name="%s"></a>',
                     self::MODULE_KEY,
                     self::MODULE_NAME,
@@ -118,7 +118,7 @@ class Module_Registration
             // Page
             $pagehook,
             // Section
-            'podlove_setting_module_group_' . self::MODULE_GROUP
+            'podlove_setting_module_group_'.self::MODULE_GROUP
         );
     }
 
@@ -129,11 +129,12 @@ class Module_Registration
      */
     private function is_modules_page()
     {
-        if (function_exists('\\Podlove\\is_options_save_page') && \Podlove\is_options_save_page()) {
+        if (function_exists('\Podlove\is_options_save_page') && \Podlove\is_options_save_page()) {
             return true;
         }
 
         $page = isset($_GET['page']) ? sanitize_text_field($_GET['page']) : '';
+
         return $page === 'podlove_settings_modules_handle';
     }
 }

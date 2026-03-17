@@ -17,6 +17,10 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+use PodloveEpisodeLocation\Episode_Location;
+use PodloveEpisodeLocation\Location_Model;
+use PodloveEpisodeLocation\Module_Registration;
+
 define('PODLOVE_EPISODE_LOCATION_VERSION', '1.0.0');
 define('PODLOVE_EPISODE_LOCATION_FILE', __FILE__);
 define('PODLOVE_EPISODE_LOCATION_DIR', plugin_dir_path(__FILE__));
@@ -29,8 +33,10 @@ function podlove_episode_location_check_dependencies()
 {
     if (!class_exists('\Podlove\Model\Episode')) {
         add_action('admin_notices', 'podlove_episode_location_missing_dependency_notice');
+
         return false;
     }
+
     return true;
 }
 
@@ -60,21 +66,21 @@ function podlove_episode_location_init()
 
     // Always load the module registration class so our entry appears on
     // the Podlove Modules settings page even when the module is disabled.
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-module-registration.php';
-    new PodloveEpisodeLocation\Module_Registration();
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-module-registration.php';
+    new Module_Registration();
 
     // Only load the full plugin functionality when the module is active.
-    if (!PodloveEpisodeLocation\Module_Registration::is_active()) {
+    if (!Module_Registration::is_active()) {
         return;
     }
 
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-location-model.php';
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-meta-box.php';
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-template-extensions.php';
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-feed-extension.php';
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-episode-location.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-location-model.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-meta-box.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-template-extensions.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-feed-extension.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-episode-location.php';
 
-    PodloveEpisodeLocation\Episode_Location::instance();
+    Episode_Location::instance();
 }
 add_action('plugins_loaded', 'podlove_episode_location_init', 20);
 
@@ -83,11 +89,11 @@ add_action('plugins_loaded', 'podlove_episode_location_init', 20);
  */
 function podlove_episode_location_activate()
 {
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-location-model.php';
-    PodloveEpisodeLocation\Location_Model::build();
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-location-model.php';
+    Location_Model::build();
 
     // Auto-enable the module in Podlove's active modules list on first activation
-    require_once PODLOVE_EPISODE_LOCATION_DIR . 'includes/class-module-registration.php';
-    PodloveEpisodeLocation\Module_Registration::activate();
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/class-module-registration.php';
+    Module_Registration::activate();
 }
 register_activation_hook(__FILE__, 'podlove_episode_location_activate');

@@ -67,11 +67,101 @@ class Meta_Box
     }
 
     /**
+     * Save location data for both rel types when the post is saved.
+     *
+     * @param int      $post_id
+     * @param \WP_Post $post
+     */
+    public function save($post_id, $post)
+    {
+        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
+            return;
+        }
+
+        if (!current_user_can('edit_post', $post_id)) {
+            return;
+        }
+
+        if (!isset($_POST['podlove_episode_location_nonce'])
+            || !wp_verify_nonce($_POST['podlove_episode_location_nonce'], 'podlove_episode_location_save')
+        ) {
+            return;
+        }
+
+        if (!isset($_POST['podlove_episode_location'])) {
+            return;
+        }
+
+        $episode = Episode::find_one_by_property('post_id', $post_id);
+        if (!$episode) {
+            return;
+        }
+
+        $all_data = $_POST['podlove_episode_location'];
+
+        foreach (['subject', 'creator'] as $rel) {
+            $data = isset($all_data[$rel]) ? $all_data[$rel] : [];
+            $this->save_rel($episode->id, $rel, $data);
+        }
+    }
+
+    /**
+     * Enqueue Leaflet.js and custom assets on episode edit pages only.
+     *
+     * @param string $hook_suffix
+     */
+    public function enqueue_assets($hook_suffix)
+    {
+        if (!in_array($hook_suffix, ['post.php', 'post-new.php'], true)) {
+            return;
+        }
+
+        $screen = get_current_screen();
+        if (!$screen || $screen->post_type !== 'podcast') {
+            return;
+        }
+
+        // Leaflet CSS
+        wp_enqueue_style(
+            'leaflet',
+            'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
+            [],
+            '1.9.4'
+        );
+
+        // Leaflet JS
+        wp_enqueue_script(
+            'leaflet',
+            'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
+            [],
+            '1.9.4',
+            true
+        );
+
+        // Plugin CSS
+        wp_enqueue_style(
+            'podlove-episode-location-admin',
+            PODLOVE_EPISODE_LOCATION_URL.'assets/css/admin-map.css',
+            ['leaflet'],
+            PODLOVE_EPISODE_LOCATION_VERSION
+        );
+
+        // Plugin JS
+        wp_enqueue_script(
+            'podlove-episode-location-admin',
+            PODLOVE_EPISODE_LOCATION_URL.'assets/js/admin-map.js',
+            ['jquery', 'leaflet'],
+            PODLOVE_EPISODE_LOCATION_VERSION,
+            true
+        );
+    }
+
+    /**
      * Render a single tab panel with map, search, and form fields.
      *
-     * @param string $rel      'subject' or 'creator'
-     * @param array  $data     Location data
-     * @param string $hint     Descriptive hint text
+     * @param string $rel  'subject' or 'creator'
+     * @param array  $data Location data
+     * @param string $hint Descriptive hint text
      */
     private function render_tab_panel($rel, $data, $hint)
     {
@@ -200,19 +290,20 @@ class Meta_Box
     /**
      * Get location data array for a given episode and rel type.
      *
-     * @param Episode|null $episode
+     * @param null|Episode $episode
      * @param string       $rel
+     *
      * @return array
      */
     private function get_location_data($episode, $rel)
     {
         $defaults = [
-            'location_name'    => '',
-            'location_lat'     => '',
-            'location_lng'     => '',
+            'location_name' => '',
+            'location_lat' => '',
+            'location_lng' => '',
             'location_address' => '',
             'location_country' => '',
-            'location_osm'     => '',
+            'location_osm' => '',
         ];
 
         if (!$episode) {
@@ -225,52 +316,13 @@ class Meta_Box
         }
 
         return [
-            'location_name'    => $location->location_name,
-            'location_lat'     => $location->location_lat,
-            'location_lng'     => $location->location_lng,
+            'location_name' => $location->location_name,
+            'location_lat' => $location->location_lat,
+            'location_lng' => $location->location_lng,
             'location_address' => $location->location_address,
             'location_country' => $location->location_country,
-            'location_osm'     => $location->location_osm,
+            'location_osm' => $location->location_osm,
         ];
-    }
-
-    /**
-     * Save location data for both rel types when the post is saved.
-     *
-     * @param int      $post_id
-     * @param \WP_Post $post
-     */
-    public function save($post_id, $post)
-    {
-        if (defined('DOING_AUTOSAVE') && DOING_AUTOSAVE) {
-            return;
-        }
-
-        if (!current_user_can('edit_post', $post_id)) {
-            return;
-        }
-
-        if (!isset($_POST['podlove_episode_location_nonce'])
-            || !wp_verify_nonce($_POST['podlove_episode_location_nonce'], 'podlove_episode_location_save')
-        ) {
-            return;
-        }
-
-        if (!isset($_POST['podlove_episode_location'])) {
-            return;
-        }
-
-        $episode = Episode::find_one_by_property('post_id', $post_id);
-        if (!$episode) {
-            return;
-        }
-
-        $all_data = $_POST['podlove_episode_location'];
-
-        foreach (['subject', 'creator'] as $rel) {
-            $data = isset($all_data[$rel]) ? $all_data[$rel] : [];
-            $this->save_rel($episode->id, $rel, $data);
-        }
     }
 
     /**
@@ -282,12 +334,12 @@ class Meta_Box
      */
     private function save_rel($episode_id, $rel, $data)
     {
-        $location_name    = sanitize_text_field($data['location_name'] ?? '');
-        $location_lat     = self::sanitize_coordinate($data['location_lat'] ?? '');
-        $location_lng     = self::sanitize_coordinate($data['location_lng'] ?? '');
+        $location_name = sanitize_text_field($data['location_name'] ?? '');
+        $location_lat = self::sanitize_coordinate($data['location_lat'] ?? '', 'lat');
+        $location_lng = self::sanitize_coordinate($data['location_lng'] ?? '', 'lng');
         $location_address = sanitize_text_field($data['location_address'] ?? '');
         $location_country = sanitize_text_field($data['location_country'] ?? '');
-        $location_osm     = sanitize_text_field($data['location_osm'] ?? '');
+        $location_osm = sanitize_text_field($data['location_osm'] ?? '');
 
         // Ensure country code is uppercase and max 2 chars
         $location_country = strtoupper(substr($location_country, 0, 2));
@@ -301,6 +353,7 @@ class Meta_Box
             if ($location) {
                 $location->delete();
             }
+
             return;
         }
 
@@ -310,73 +363,24 @@ class Meta_Box
             $location->rel = $rel;
         }
 
-        $location->location_name    = $location_name;
-        $location->location_lat     = $location_lat;
-        $location->location_lng     = $location_lng;
+        $location->location_name = $location_name;
+        $location->location_lat = $location_lat;
+        $location->location_lng = $location_lng;
         $location->location_address = $location_address;
         $location->location_country = $location_country;
-        $location->location_osm     = $location_osm;
+        $location->location_osm = $location_osm;
         $location->save();
-    }
-
-    /**
-     * Enqueue Leaflet.js and custom assets on episode edit pages only.
-     *
-     * @param string $hook_suffix
-     */
-    public function enqueue_assets($hook_suffix)
-    {
-        if (!in_array($hook_suffix, ['post.php', 'post-new.php'], true)) {
-            return;
-        }
-
-        $screen = get_current_screen();
-        if (!$screen || $screen->post_type !== 'podcast') {
-            return;
-        }
-
-        // Leaflet CSS
-        wp_enqueue_style(
-            'leaflet',
-            'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
-            [],
-            '1.9.4'
-        );
-
-        // Leaflet JS
-        wp_enqueue_script(
-            'leaflet',
-            'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
-            [],
-            '1.9.4',
-            true
-        );
-
-        // Plugin CSS
-        wp_enqueue_style(
-            'podlove-episode-location-admin',
-            PODLOVE_EPISODE_LOCATION_URL . 'assets/css/admin-map.css',
-            ['leaflet'],
-            PODLOVE_EPISODE_LOCATION_VERSION
-        );
-
-        // Plugin JS
-        wp_enqueue_script(
-            'podlove-episode-location-admin',
-            PODLOVE_EPISODE_LOCATION_URL . 'assets/js/admin-map.js',
-            ['jquery', 'leaflet'],
-            PODLOVE_EPISODE_LOCATION_VERSION,
-            true
-        );
     }
 
     /**
      * Sanitize a coordinate value.
      *
-     * @param string $value
+     * @param string $value raw input value
+     * @param string $type  'lat' or 'lng' for basic range validation
+     *
      * @return string
      */
-    private static function sanitize_coordinate($value)
+    private static function sanitize_coordinate($value, $type)
     {
         $value = trim($value);
 
@@ -385,7 +389,36 @@ class Meta_Box
         }
 
         if (is_numeric($value)) {
-            return (string) floatval($value);
+            $float = (float) $value;
+
+            // Basic range checks to avoid obviously invalid coordinates.
+            if ($type === 'lat' && ($float < -90 || $float > 90)) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log(
+                        sprintf(
+                            '[Podlove Episode Location] Discarding out-of-range latitude value: %s',
+                            $value
+                        )
+                    );
+                }
+
+                return '';
+            }
+
+            if ($type === 'lng' && ($float < -180 || $float > 180)) {
+                if (defined('WP_DEBUG') && WP_DEBUG) {
+                    error_log(
+                        sprintf(
+                            '[Podlove Episode Location] Discarding out-of-range longitude value: %s',
+                            $value
+                        )
+                    );
+                }
+
+                return '';
+            }
+
+            return sprintf('%.8F', $float);
         }
 
         return '';

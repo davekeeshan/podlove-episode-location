@@ -15,7 +15,19 @@ class Feed_Extension
 {
     public function __construct()
     {
+        // Declare the Podcasting 2.0 namespace on RSS feeds so <podcast:location>
+        // elements are valid and visible.
+        add_action('rss2_ns', [$this, 'add_podcasting_namespace']);
+
         add_action('podlove_append_to_feed_entry', [$this, 'add_location_to_feed'], 10, 4);
+    }
+
+    /**
+     * Add the Podcasting 2.0 namespace declaration to RSS feeds.
+     */
+    public function add_podcasting_namespace()
+    {
+        echo ' xmlns:podcast="https://podcastindex.org/namespace/1.0"';
     }
 
     /**

@@ -37,7 +37,8 @@ class Location_Model
     public static function table_name()
     {
         global $wpdb;
-        return $wpdb->prefix . 'podlove_episode_location';
+
+        return $wpdb->prefix.'podlove_episode_location';
     }
 
     /**
@@ -63,16 +64,33 @@ class Location_Model
             UNIQUE KEY episode_rel (episode_id, rel)
         ) {$charset_collate};";
 
-        require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+        require_once ABSPATH.'wp-admin/includes/upgrade.php';
         dbDelta($sql);
+
+        // Basic robustness: log if table creation failed.
+        $existing_table = $wpdb->get_var($wpdb->prepare(
+            'SHOW TABLES LIKE %s',
+            $table
+        ));
+
+        if ($existing_table !== $table && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(
+                sprintf(
+                    '[Podlove Episode Location] Failed to create table %s. DB error: %s',
+                    $table,
+                    $wpdb->last_error
+                )
+            );
+        }
     }
 
     /**
      * Find a location record by episode ID and rel type.
      *
      * @param int    $episode_id
-     * @param string $rel 'subject' or 'creator'
-     * @return Location_Model|null
+     * @param string $rel        'subject' or 'creator'
+     *
+     * @return null|Location_Model
      */
     public static function find_by_episode_id_and_rel($episode_id, $rel = 'subject')
     {
@@ -98,6 +116,7 @@ class Location_Model
      * Find all location records for an episode.
      *
      * @param int $episode_id
+     *
      * @return Location_Model[]
      */
     public static function find_all_by_episode_id($episode_id)
@@ -126,14 +145,14 @@ class Location_Model
 
         $table = self::table_name();
         $data = [
-            'episode_id'       => $this->episode_id,
-            'rel'              => $this->rel ?: 'subject',
-            'location_name'    => $this->location_name,
-            'location_lat'     => $this->location_lat,
-            'location_lng'     => $this->location_lng,
+            'episode_id' => (int) $this->episode_id,
+            'rel' => $this->rel ?: 'subject',
+            'location_name' => $this->location_name,
+            'location_lat' => $this->location_lat,
+            'location_lng' => $this->location_lng,
             'location_address' => $this->location_address,
             'location_country' => $this->location_country,
-            'location_osm'     => $this->location_osm,
+            'location_osm' => $this->location_osm,
         ];
         $formats = ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s'];
 
@@ -142,6 +161,17 @@ class Location_Model
         } else {
             $wpdb->insert($table, $data, $formats);
             $this->id = $wpdb->insert_id;
+        }
+
+        if (!empty($wpdb->last_error) && defined('WP_DEBUG') && WP_DEBUG) {
+            error_log(
+                sprintf(
+                    '[Podlove Episode Location] Failed to save location record (episode_id=%d, rel=%s). DB error: %s',
+                    $this->episode_id,
+                    $this->rel,
+                    $wpdb->last_error
+                )
+            );
         }
     }
 
@@ -161,20 +191,22 @@ class Location_Model
      * Create a model instance from a database row.
      *
      * @param object $row
+     *
      * @return Location_Model
      */
     private static function from_row($row)
     {
         $model = new self();
-        $model->id               = (int) $row->id;
-        $model->episode_id       = (int) $row->episode_id;
-        $model->rel              = $row->rel;
-        $model->location_name    = $row->location_name;
-        $model->location_lat     = $row->location_lat;
-        $model->location_lng     = $row->location_lng;
+        $model->id = (int) $row->id;
+        $model->episode_id = (int) $row->episode_id;
+        $model->rel = $row->rel;
+        $model->location_name = $row->location_name;
+        $model->location_lat = $row->location_lat;
+        $model->location_lng = $row->location_lng;
         $model->location_address = $row->location_address;
         $model->location_country = $row->location_country;
-        $model->location_osm     = $row->location_osm;
+        $model->location_osm = $row->location_osm;
+
         return $model;
     }
 }
