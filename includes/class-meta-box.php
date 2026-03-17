@@ -9,7 +9,8 @@ if (!defined('ABSPATH')) {
 }
 
 /**
- * Registers and renders the Episode Location meta box on the podcast edit screen.
+ * Registers and renders the Episode Location meta box with tabbed UI
+ * for Subject and Creator locations.
  */
 class Meta_Box
 {
@@ -36,7 +37,7 @@ class Meta_Box
     }
 
     /**
-     * Render the meta box HTML.
+     * Render the tabbed meta box HTML.
      *
      * @param \WP_Post $post
      */
@@ -44,104 +45,152 @@ class Meta_Box
     {
         $episode = Episode::find_one_by_property('post_id', $post->ID);
 
-        $location_name    = '';
-        $location_lat     = '';
-        $location_lng     = '';
-        $location_address = '';
-
-        if ($episode) {
-            $location = Location_Model::find_by_episode_id($episode->id);
-            if ($location) {
-                $location_name    = $location->location_name;
-                $location_lat     = $location->location_lat;
-                $location_lng     = $location->location_lng;
-                $location_address = $location->location_address;
-            }
-        }
+        $subject = $this->get_location_data($episode, 'subject');
+        $creator = $this->get_location_data($episode, 'creator');
 
         wp_nonce_field('podlove_episode_location_save', 'podlove_episode_location_nonce');
         ?>
         <div id="podlove-episode-location-wrapper">
+            <div class="podlove-location-tabs">
+                <button type="button" class="podlove-location-tab active" data-tab="subject">
+                    <?php esc_html_e('Subject Location', 'podlove-episode-location'); ?>
+                </button>
+                <button type="button" class="podlove-location-tab" data-tab="creator">
+                    <?php esc_html_e('Creator Location', 'podlove-episode-location'); ?>
+                </button>
+            </div>
+
+            <?php $this->render_tab_panel('subject', $subject, __('Where is this episode about?', 'podlove-episode-location')); ?>
+            <?php $this->render_tab_panel('creator', $creator, __('Where was this episode recorded?', 'podlove-episode-location')); ?>
+        </div>
+        <?php
+    }
+
+    /**
+     * Render a single tab panel with map, search, and form fields.
+     *
+     * @param string $rel      'subject' or 'creator'
+     * @param array  $data     Location data
+     * @param string $hint     Descriptive hint text
+     */
+    private function render_tab_panel($rel, $data, $hint)
+    {
+        $active = ($rel === 'subject') ? ' active' : '';
+        ?>
+        <div class="podlove-location-tab-panel<?php echo $active; ?>" data-tab="<?php echo esc_attr($rel); ?>">
+            <p class="podlove-location-tab-hint"><?php echo esc_html($hint); ?></p>
+
             <div class="podlove-location-search-wrapper">
-                <label for="podlove-location-search">
+                <label for="podlove-location-search-<?php echo esc_attr($rel); ?>">
                     <?php esc_html_e('Search Location', 'podlove-episode-location'); ?>
                 </label>
                 <div class="podlove-location-search-row">
                     <input
                         type="text"
-                        id="podlove-location-search"
-                        class="regular-text"
+                        id="podlove-location-search-<?php echo esc_attr($rel); ?>"
+                        class="regular-text podlove-location-search-input"
+                        data-rel="<?php echo esc_attr($rel); ?>"
                         placeholder="<?php esc_attr_e('Search for a place or address...', 'podlove-episode-location'); ?>"
                     />
-                    <button type="button" id="podlove-location-search-btn" class="button">
+                    <button type="button" class="button podlove-location-search-btn" data-rel="<?php echo esc_attr($rel); ?>">
                         <?php esc_html_e('Search', 'podlove-episode-location'); ?>
                     </button>
                 </div>
-                <div id="podlove-location-search-results"></div>
+                <div id="podlove-location-search-results-<?php echo esc_attr($rel); ?>" class="podlove-location-search-results"></div>
             </div>
 
-            <div id="podlove-location-map"></div>
+            <div id="podlove-location-map-<?php echo esc_attr($rel); ?>" class="podlove-location-map"></div>
 
             <div class="podlove-location-fields">
                 <div class="podlove-location-field-row">
-                    <label for="podlove-location-name">
+                    <label for="podlove-location-name-<?php echo esc_attr($rel); ?>">
                         <?php esc_html_e('Location Name', 'podlove-episode-location'); ?>
                     </label>
                     <input
                         type="text"
-                        id="podlove-location-name"
-                        name="podlove_episode_location[location_name]"
+                        id="podlove-location-name-<?php echo esc_attr($rel); ?>"
+                        name="podlove_episode_location[<?php echo esc_attr($rel); ?>][location_name]"
                         class="regular-text"
-                        value="<?php echo esc_attr($location_name); ?>"
+                        value="<?php echo esc_attr($data['location_name']); ?>"
                         placeholder="<?php esc_attr_e('e.g. Berlin, Conference Hall...', 'podlove-episode-location'); ?>"
                     />
                 </div>
 
                 <div class="podlove-location-field-row podlove-location-coords-row">
                     <div class="podlove-location-coord">
-                        <label for="podlove-location-lat">
+                        <label for="podlove-location-lat-<?php echo esc_attr($rel); ?>">
                             <?php esc_html_e('Latitude', 'podlove-episode-location'); ?>
                         </label>
                         <input
                             type="text"
-                            id="podlove-location-lat"
-                            name="podlove_episode_location[location_lat]"
+                            id="podlove-location-lat-<?php echo esc_attr($rel); ?>"
+                            name="podlove_episode_location[<?php echo esc_attr($rel); ?>][location_lat]"
                             class="regular-text"
-                            value="<?php echo esc_attr($location_lat); ?>"
+                            value="<?php echo esc_attr($data['location_lat']); ?>"
                             readonly
                         />
                     </div>
                     <div class="podlove-location-coord">
-                        <label for="podlove-location-lng">
+                        <label for="podlove-location-lng-<?php echo esc_attr($rel); ?>">
                             <?php esc_html_e('Longitude', 'podlove-episode-location'); ?>
                         </label>
                         <input
                             type="text"
-                            id="podlove-location-lng"
-                            name="podlove_episode_location[location_lng]"
+                            id="podlove-location-lng-<?php echo esc_attr($rel); ?>"
+                            name="podlove_episode_location[<?php echo esc_attr($rel); ?>][location_lng]"
                             class="regular-text"
-                            value="<?php echo esc_attr($location_lng); ?>"
+                            value="<?php echo esc_attr($data['location_lng']); ?>"
                             readonly
                         />
                     </div>
                 </div>
 
                 <div class="podlove-location-field-row">
-                    <label for="podlove-location-address">
+                    <label for="podlove-location-address-<?php echo esc_attr($rel); ?>">
                         <?php esc_html_e('Address', 'podlove-episode-location'); ?>
                     </label>
                     <input
                         type="text"
-                        id="podlove-location-address"
-                        name="podlove_episode_location[location_address]"
+                        id="podlove-location-address-<?php echo esc_attr($rel); ?>"
+                        name="podlove_episode_location[<?php echo esc_attr($rel); ?>][location_address]"
                         class="large-text"
-                        value="<?php echo esc_attr($location_address); ?>"
+                        value="<?php echo esc_attr($data['location_address']); ?>"
                         placeholder="<?php esc_attr_e('Full address (auto-filled from search)', 'podlove-episode-location'); ?>"
                     />
                 </div>
 
+                <div class="podlove-location-field-row podlove-location-extra-row">
+                    <div class="podlove-location-coord">
+                        <label for="podlove-location-country-<?php echo esc_attr($rel); ?>">
+                            <?php esc_html_e('Country', 'podlove-episode-location'); ?>
+                        </label>
+                        <input
+                            type="text"
+                            id="podlove-location-country-<?php echo esc_attr($rel); ?>"
+                            name="podlove_episode_location[<?php echo esc_attr($rel); ?>][location_country]"
+                            class="small-text"
+                            value="<?php echo esc_attr($data['location_country']); ?>"
+                            maxlength="2"
+                            placeholder="<?php esc_attr_e('e.g. GB', 'podlove-episode-location'); ?>"
+                        />
+                    </div>
+                    <div class="podlove-location-coord">
+                        <label for="podlove-location-osm-<?php echo esc_attr($rel); ?>">
+                            <?php esc_html_e('OSM ID', 'podlove-episode-location'); ?>
+                        </label>
+                        <input
+                            type="text"
+                            id="podlove-location-osm-<?php echo esc_attr($rel); ?>"
+                            name="podlove_episode_location[<?php echo esc_attr($rel); ?>][location_osm]"
+                            class="regular-text"
+                            value="<?php echo esc_attr($data['location_osm']); ?>"
+                            placeholder="<?php esc_attr_e('e.g. R113314', 'podlove-episode-location'); ?>"
+                        />
+                    </div>
+                </div>
+
                 <p class="podlove-location-hint">
-                    <?php esc_html_e('Search for a location or click on the map to set the pin. Drag the marker to adjust.', 'podlove-episode-location'); ?>
+                    <?php esc_html_e('Search for a location or click on the map to set the pin. Drag the marker to adjust. Country and OSM ID are auto-filled from search results.', 'podlove-episode-location'); ?>
                 </p>
             </div>
         </div>
@@ -149,7 +198,44 @@ class Meta_Box
     }
 
     /**
-     * Save location data when the post is saved.
+     * Get location data array for a given episode and rel type.
+     *
+     * @param Episode|null $episode
+     * @param string       $rel
+     * @return array
+     */
+    private function get_location_data($episode, $rel)
+    {
+        $defaults = [
+            'location_name'    => '',
+            'location_lat'     => '',
+            'location_lng'     => '',
+            'location_address' => '',
+            'location_country' => '',
+            'location_osm'     => '',
+        ];
+
+        if (!$episode) {
+            return $defaults;
+        }
+
+        $location = Location_Model::find_by_episode_id_and_rel($episode->id, $rel);
+        if (!$location) {
+            return $defaults;
+        }
+
+        return [
+            'location_name'    => $location->location_name,
+            'location_lat'     => $location->location_lat,
+            'location_lng'     => $location->location_lng,
+            'location_address' => $location->location_address,
+            'location_country' => $location->location_country,
+            'location_osm'     => $location->location_osm,
+        ];
+    }
+
+    /**
+     * Save location data for both rel types when the post is saved.
      *
      * @param int      $post_id
      * @param \WP_Post $post
@@ -179,17 +265,39 @@ class Meta_Box
             return;
         }
 
-        $data = $_POST['podlove_episode_location'];
+        $all_data = $_POST['podlove_episode_location'];
 
+        foreach (['subject', 'creator'] as $rel) {
+            $data = isset($all_data[$rel]) ? $all_data[$rel] : [];
+            $this->save_rel($episode->id, $rel, $data);
+        }
+    }
+
+    /**
+     * Save a single rel type's location data.
+     *
+     * @param int    $episode_id
+     * @param string $rel
+     * @param array  $data
+     */
+    private function save_rel($episode_id, $rel, $data)
+    {
         $location_name    = sanitize_text_field($data['location_name'] ?? '');
         $location_lat     = self::sanitize_coordinate($data['location_lat'] ?? '');
         $location_lng     = self::sanitize_coordinate($data['location_lng'] ?? '');
         $location_address = sanitize_text_field($data['location_address'] ?? '');
+        $location_country = sanitize_text_field($data['location_country'] ?? '');
+        $location_osm     = sanitize_text_field($data['location_osm'] ?? '');
 
-        $location = Location_Model::find_by_episode_id($episode->id);
+        // Ensure country code is uppercase and max 2 chars
+        $location_country = strtoupper(substr($location_country, 0, 2));
+
+        $location = Location_Model::find_by_episode_id_and_rel($episode_id, $rel);
 
         // If all fields are empty, delete existing record
-        if (empty($location_name) && empty($location_lat) && empty($location_lng) && empty($location_address)) {
+        if (empty($location_name) && empty($location_lat) && empty($location_lng)
+            && empty($location_address) && empty($location_country) && empty($location_osm)
+        ) {
             if ($location) {
                 $location->delete();
             }
@@ -198,13 +306,16 @@ class Meta_Box
 
         if (!$location) {
             $location = new Location_Model();
-            $location->episode_id = $episode->id;
+            $location->episode_id = $episode_id;
+            $location->rel = $rel;
         }
 
         $location->location_name    = $location_name;
         $location->location_lat     = $location_lat;
         $location->location_lng     = $location_lng;
         $location->location_address = $location_address;
+        $location->location_country = $location_country;
+        $location->location_osm     = $location_osm;
         $location->save();
     }
 

@@ -4,7 +4,59 @@
     padding: 10px 0;
 }
 
-/* Search section */
+/* ---- Tabs ---- */
+.podlove-location-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid #0073aa;
+    margin-bottom: 16px;
+}
+
+.podlove-location-tab {
+    padding: 8px 16px;
+    background: #f1f1f1;
+    border: 1px solid #ddd;
+    border-bottom: none;
+    border-radius: 4px 4px 0 0;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    margin-right: 2px;
+    position: relative;
+    top: 2px;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.podlove-location-tab:hover {
+    background: #e5e5e5;
+    color: #23282d;
+}
+
+.podlove-location-tab.active {
+    background: #fff;
+    color: #0073aa;
+    border-color: #0073aa;
+    border-bottom: 2px solid #fff;
+}
+
+/* ---- Tab panels ---- */
+.podlove-location-tab-panel {
+    display: none;
+}
+
+.podlove-location-tab-panel.active {
+    display: block;
+}
+
+.podlove-location-tab-hint {
+    font-size: 13px;
+    color: #666;
+    font-style: italic;
+    margin: 0 0 12px;
+}
+
+/* ---- Search section ---- */
 .podlove-location-search-wrapper {
     margin-bottom: 12px;
 }
@@ -25,8 +77,8 @@
     flex: 1;
 }
 
-/* Search results dropdown */
-#podlove-location-search-results {
+/* ---- Search results dropdown ---- */
+.podlove-location-search-results {
     position: relative;
     z-index: 1000;
 }
@@ -75,8 +127,8 @@
     color: #a00;
 }
 
-/* Map container */
-#podlove-location-map {
+/* ---- Map container ---- */
+.podlove-location-map {
     width: 100%;
     height: 350px;
     border: 1px solid #ddd;
@@ -84,7 +136,7 @@
     z-index: 0;
 }
 
-/* Form fields */
+/* ---- Form fields ---- */
 .podlove-location-fields {
     margin-top: 4px;
 }
@@ -99,8 +151,9 @@
     margin-bottom: 4px;
 }
 
-/* Coordinates displayed side by side */
-.podlove-location-coords-row {
+/* Coordinates and extra fields displayed side by side */
+.podlove-location-coords-row,
+.podlove-location-extra-row {
     display: flex;
     gap: 16px;
 }
@@ -114,7 +167,12 @@
     background-color: #f7f7f7;
 }
 
-/* Hint text */
+/* Country and OSM fields: editable, so use normal background */
+.podlove-location-extra-row .podlove-location-coord input[type="text"] {
+    background-color: #fff;
+}
+
+/* ---- Hint text ---- */
 .podlove-location-hint {
     font-size: 12px;
     color: #666;

@@ -1,16 +1,22 @@
 # Podlove Episode Location
 
-A standalone WordPress plugin that adds episode location and map functionality to [Podlove Publisher](https://podlove.org/podlove-publisher/). Attach geographic locations to your podcast episodes with an interactive OpenStreetMap-powered map.
+A standalone WordPress plugin that adds dual episode location support (subject & creator) to [Podlove Publisher](https://podlove.org/podlove-publisher/). Registers as a **Podlove module** that can be enabled/disabled from the Podlove "Modules" settings page.
 
 ## Features
 
-- **Interactive Map** — OpenStreetMap + Leaflet.js map widget in the episode editor
-- **Location Search** — Nominatim geocoding to search for places and addresses
-- **Draggable Marker** — Fine-tune location by dragging the map pin
-- **Reverse Geocoding** — Auto-fills address when placing a pin on the map
-- **Podlove Template Tags** — Access location data in Podlove templates
-- **RSS Feed Support** — Adds Podcasting 2.0 `<podcast:location>` tags to your feed
-- **No API Keys Required** — Uses free OpenStreetMap and Nominatim services
+- **Podlove Module Integration** — Appears in the Podlove Publisher "Modules" settings page and can be toggled on/off like any native module
+- **Dual Location Support** — Two independent locations per episode:
+  - **Subject Location** — Where the episode is about
+  - **Creator Location** — Where the episode was recorded
+- **Tabbed UI** — Clean tabbed interface in the episode editor to switch between Subject and Creator location editors
+- **Interactive Maps** — OpenStreetMap + Leaflet.js map widget with separate maps per tab
+- **Location Search** — Nominatim geocoding to search for places and addresses (no API key needed)
+- **Draggable Markers** — Fine-tune locations by dragging map pins
+- **Reverse Geocoding** — Auto-fills address, country code, and OSM identifier when placing a pin
+- **OSM Data Capture** — Automatically captures `osm_type`/`osm_id` and country code from Nominatim
+- **Podlove Template Tags** — Access both subject and creator location data in Podlove templates
+- **RSS Feed Support** — Emits Podcasting 2.0 `<podcast:location>` tags with `rel`, `geo`, `osm`, and `country` attributes
+- **Backwards Compatible** — Legacy template tags still work, mapping to the subject location
 
 ## Requirements
 
@@ -23,7 +29,8 @@ A standalone WordPress plugin that adds episode location and map functionality t
 1. Download the latest release from [GitHub Releases](https://github.com/davekeeshan/podlove-episode-location/releases)
 2. Upload the `podlove-episode-location` folder to `/wp-content/plugins/`
 3. Activate the plugin through the WordPress **Plugins** menu
-4. The "Episode Location" meta box will appear on the episode edit screen
+4. The module is automatically enabled in Podlove's Modules settings
+5. To disable, go to **Podlove > Modules** and uncheck "Episode Location"
 
 Alternatively, clone directly into your plugins directory:
 
@@ -34,18 +41,39 @@ git clone https://github.com/davekeeshan/podlove-episode-location.git
 
 ## Usage
 
-### Setting a Location
+### Setting Locations
 
 1. Edit any podcast episode in WordPress
 2. Scroll down to the **Episode Location** meta box
-3. Search for a location by name or address, or click directly on the map
-4. Adjust the marker by dragging it
-5. Optionally edit the location name and address fields
-6. Save the episode
+3. Use the **Subject Location** tab to set where the episode is about
+4. Use the **Creator Location** tab to set where the episode was recorded
+5. In each tab: search for a location, click the map, or drag the marker
+6. Country code and OSM ID are auto-filled from search results
+7. Save the episode
+
+You can set one location, both, or neither — only locations with data will appear in the feed.
 
 ### Template Tags
 
-Use these in your Podlove templates:
+**Subject location:**
+
+```twig
+{{ episode.locationSubjectName }}
+{{ episode.locationSubjectLat }}
+{{ episode.locationSubjectLng }}
+{{ episode.locationSubjectAddress }}
+```
+
+**Creator location:**
+
+```twig
+{{ episode.locationCreatorName }}
+{{ episode.locationCreatorLat }}
+{{ episode.locationCreatorLng }}
+{{ episode.locationCreatorAddress }}
+```
+
+**Legacy tags** (map to subject location for backwards compatibility):
 
 ```twig
 {{ episode.locationName }}
@@ -54,46 +82,66 @@ Use these in your Podlove templates:
 {{ episode.locationAddress }}
 ```
 
-Example — display a link to the location on OpenStreetMap:
+**Example** — display links for both locations:
 
 ```twig
-{% if episode.locationLat %}
-  <a href="https://www.openstreetmap.org/?mlat={{ episode.locationLat }}&mlon={{ episode.locationLng }}#map=15/{{ episode.locationLat }}/{{ episode.locationLng }}">
-    {{ episode.locationName }}
-  </a>
+{% if episode.locationSubjectLat %}
+  <p>About:
+    <a href="https://www.openstreetmap.org/?mlat={{ episode.locationSubjectLat }}&mlon={{ episode.locationSubjectLng }}#map=15/{{ episode.locationSubjectLat }}/{{ episode.locationSubjectLng }}">
+      {{ episode.locationSubjectName }}
+    </a>
+  </p>
+{% endif %}
+
+{% if episode.locationCreatorLat %}
+  <p>Recorded in:
+    <a href="https://www.openstreetmap.org/?mlat={{ episode.locationCreatorLat }}&mlon={{ episode.locationCreatorLng }}#map=15/{{ episode.locationCreatorLat }}/{{ episode.locationCreatorLng }}">
+      {{ episode.locationCreatorName }}
+    </a>
+  </p>
 {% endif %}
 ```
 
 ### RSS Feed
 
-The plugin automatically adds a Podcasting 2.0 `<podcast:location>` tag to each episode's feed entry when a location is set:
+The plugin automatically adds Podcasting 2.0 `<podcast:location>` tags to each episode's feed entry. Separate tags are emitted for each location type that has data:
 
 ```xml
-<podcast:location geo="geo:52.52000000,13.40500000">Berlin</podcast:location>
+<podcast:location rel="subject" geo="geo:51.50740000,-0.12780000" osm="R65606" country="GB">London</podcast:location>
+<podcast:location rel="creator" geo="geo:53.34980000,-6.26030000" osm="R1109531" country="IE">Dublin</podcast:location>
 ```
 
-## Database Compatibility
+Attributes include:
+- `rel` — "subject" or "creator" per the Podcasting 2.0 spec
+- `geo` — Geo URI with latitude and longitude
+- `osm` — OpenStreetMap identifier (e.g. "R65606" for a relation)
+- `country` — ISO 3166-1 alpha-2 country code
 
-The plugin uses Podlove's table naming convention (`{wp_prefix}podlove_episode_location`) and references Podlove episode IDs. This ensures that if the feature is later merged into Podlove Publisher as a native module, no data migration is needed.
+## Module Registration
+
+This plugin registers itself on the Podlove Publisher "Modules" settings page under the **Metadata** group. It can be enabled or disabled from there like any native Podlove module. When disabled, the meta box, template tags, and feed output are all deactivated, but the plugin remains installed and your location data is preserved.
+
+## Database
+
+The plugin uses a single table `{wp_prefix}podlove_episode_location` with a unique constraint on `(episode_id, rel)` to store one subject and one creator location per episode.
 
 ### Schema
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `id` | INT (PK) | Auto-increment primary key |
-| `episode_id` | INT (indexed) | References Podlove episode ID |
+| `id` | BIGINT UNSIGNED (PK) | Auto-increment primary key |
+| `episode_id` | BIGINT UNSIGNED | References Podlove episode ID |
+| `rel` | VARCHAR(20) | Relationship type: 'subject' or 'creator' |
 | `location_name` | VARCHAR(255) | Display name for the location |
 | `location_lat` | DECIMAL(10,8) | Latitude |
 | `location_lng` | DECIMAL(11,8) | Longitude |
 | `location_address` | TEXT | Full address string |
+| `location_country` | VARCHAR(2) | ISO 3166-1 alpha-2 country code |
+| `location_osm` | VARCHAR(50) | OSM identifier (e.g. "R113314") |
 
-## Screenshots
+## Upgrading from v1.x
 
-<!-- Screenshots can be added here -->
-
-1. **Episode Location meta box** — Interactive map with search in the episode editor
-2. **Search results** — Nominatim-powered location search
-3. **Feed output** — Podcasting 2.0 location tag in RSS
+Version 2.0 adds the `rel`, `location_country`, and `location_osm` columns to the database table automatically on activation. Existing location data is preserved and treated as subject locations. Legacy template tags continue to work.
 
 ## License
 

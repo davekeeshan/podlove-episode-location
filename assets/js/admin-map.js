@@ -1,38 +1,50 @@
 (function ($) {
   "use strict";
 
-  var map = null;
-  var marker = null;
   var defaultLat = 51.505;
   var defaultLng = -0.09;
   var defaultZoom = 2;
   var locatedZoom = 15;
 
+  // Per-tab state: { subject: { map, marker, initialized }, creator: { ... } }
+  var tabs = {};
+
   /**
-   * Initialize the Leaflet map inside the meta box.
+   * Map OSM type string from Nominatim to single-letter prefix.
    */
-  function initMap() {
-    var container = document.getElementById("podlove-location-map");
+  function osmTypePrefix(osmType) {
+    var map = { node: "N", way: "W", relation: "R" };
+    return map[osmType] || "";
+  }
+
+  /**
+   * Initialize or retrieve the map state for a given rel type.
+   * Lazy-initializes the Leaflet map only when the tab is first shown.
+   */
+  function initMapForRel(rel) {
+    if (tabs[rel] && tabs[rel].initialized) {
+      // Map already exists — just make sure it's properly sized
+      tabs[rel].map.invalidateSize();
+      return;
+    }
+
+    var containerId = "podlove-location-map-" + rel;
+    var container = document.getElementById(containerId);
     if (!container) {
       return;
     }
 
-    var existingLat = parseFloat(
-      document.getElementById("podlove-location-lat").value
-    );
-    var existingLng = parseFloat(
-      document.getElementById("podlove-location-lng").value
-    );
+    var latField = document.getElementById("podlove-location-lat-" + rel);
+    var lngField = document.getElementById("podlove-location-lng-" + rel);
+    var existingLat = latField ? parseFloat(latField.value) : NaN;
+    var existingLng = lngField ? parseFloat(lngField.value) : NaN;
     var hasExisting = !isNaN(existingLat) && !isNaN(existingLng);
 
     var startLat = hasExisting ? existingLat : defaultLat;
     var startLng = hasExisting ? existingLng : defaultLng;
     var startZoom = hasExisting ? locatedZoom : defaultZoom;
 
-    map = L.map("podlove-location-map").setView(
-      [startLat, startLng],
-      startZoom
-    );
+    var map = L.map(containerId).setView([startLat, startLng], startZoom);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
@@ -40,14 +52,22 @@
       maxZoom: 19,
     }).addTo(map);
 
+    var state = {
+      map: map,
+      marker: null,
+      initialized: true,
+    };
+
+    tabs[rel] = state;
+
     if (hasExisting) {
-      placeMarker(startLat, startLng);
+      placeMarker(rel, startLat, startLng);
     }
 
     map.on("click", function (e) {
-      placeMarker(e.latlng.lat, e.latlng.lng);
-      updateCoordinateFields(e.latlng.lat, e.latlng.lng);
-      reverseGeocode(e.latlng.lat, e.latlng.lng);
+      placeMarker(rel, e.latlng.lat, e.latlng.lng);
+      updateCoordinateFields(rel, e.latlng.lat, e.latlng.lng);
+      reverseGeocode(rel, e.latlng.lat, e.latlng.lng);
     });
 
     setTimeout(function () {
@@ -56,46 +76,55 @@
   }
 
   /**
-   * Place or move the draggable marker on the map.
+   * Place or move the draggable marker on a tab's map.
    */
-  function placeMarker(lat, lng) {
-    if (marker) {
-      marker.setLatLng([lat, lng]);
-    } else {
-      marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+  function placeMarker(rel, lat, lng) {
+    var state = tabs[rel];
+    if (!state || !state.map) {
+      return;
+    }
 
-      marker.on("dragend", function (e) {
+    if (state.marker) {
+      state.marker.setLatLng([lat, lng]);
+    } else {
+      state.marker = L.marker([lat, lng], { draggable: true }).addTo(
+        state.map
+      );
+
+      state.marker.on("dragend", function (e) {
         var pos = e.target.getLatLng();
-        updateCoordinateFields(pos.lat, pos.lng);
-        reverseGeocode(pos.lat, pos.lng);
+        updateCoordinateFields(rel, pos.lat, pos.lng);
+        reverseGeocode(rel, pos.lat, pos.lng);
       });
     }
   }
 
   /**
-   * Update the latitude and longitude form fields.
+   * Update the latitude and longitude form fields for a rel type.
    */
-  function updateCoordinateFields(lat, lng) {
-    document.getElementById("podlove-location-lat").value = lat.toFixed(8);
-    document.getElementById("podlove-location-lng").value = lng.toFixed(8);
+  function updateCoordinateFields(rel, lat, lng) {
+    var latField = document.getElementById("podlove-location-lat-" + rel);
+    var lngField = document.getElementById("podlove-location-lng-" + rel);
+    if (latField) latField.value = lat.toFixed(8);
+    if (lngField) lngField.value = lng.toFixed(8);
   }
 
   /**
    * Search for a location using Nominatim geocoding.
    */
-  function searchLocation(query) {
+  function searchLocation(rel, query) {
     if (!query || query.trim().length < 2) {
       return;
     }
 
     var resultsContainer = document.getElementById(
-      "podlove-location-search-results"
+      "podlove-location-search-results-" + rel
     );
     resultsContainer.innerHTML =
       '<div class="podlove-location-searching">Searching...</div>';
 
     var url =
-      "https://nominatim.openstreetmap.org/search?format=json&limit=5&q=" +
+      "https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=" +
       encodeURIComponent(query);
 
     $.ajax({
@@ -105,7 +134,7 @@
         Accept: "application/json",
       },
       success: function (data) {
-        displaySearchResults(data);
+        displaySearchResults(rel, data);
       },
       error: function () {
         resultsContainer.innerHTML =
@@ -117,9 +146,9 @@
   /**
    * Display geocoding search results as a selectable list.
    */
-  function displaySearchResults(results) {
+  function displaySearchResults(rel, results) {
     var container = document.getElementById(
-      "podlove-location-search-results"
+      "podlove-location-search-results-" + rel
     );
 
     if (!results || results.length === 0) {
@@ -130,18 +159,34 @@
 
     var html = '<ul class="podlove-location-results-list">';
     for (var i = 0; i < results.length; i++) {
+      var r = results[i];
+      var osmId = "";
+      if (r.osm_type && r.osm_id) {
+        osmId = osmTypePrefix(r.osm_type) + r.osm_id;
+      }
+      var countryCode = "";
+      if (r.address && r.address.country_code) {
+        countryCode = r.address.country_code.toUpperCase();
+      }
+
       html +=
         '<li class="podlove-location-result-item" ' +
         'data-lat="' +
-        results[i].lat +
+        r.lat +
         '" ' +
         'data-lng="' +
-        results[i].lon +
+        r.lon +
         '" ' +
         'data-name="' +
-        escapeHtml(results[i].display_name) +
+        escapeHtml(r.display_name) +
+        '" ' +
+        'data-osm="' +
+        escapeHtml(osmId) +
+        '" ' +
+        'data-country="' +
+        escapeHtml(countryCode) +
         '">' +
-        escapeHtml(results[i].display_name) +
+        escapeHtml(r.display_name) +
         "</li>";
     }
     html += "</ul>";
@@ -154,16 +199,41 @@
         var lat = parseFloat($(this).data("lat"));
         var lng = parseFloat($(this).data("lng"));
         var name = $(this).data("name");
+        var osm = $(this).data("osm");
+        var country = $(this).data("country");
 
-        placeMarker(lat, lng);
-        updateCoordinateFields(lat, lng);
-        map.setView([lat, lng], locatedZoom);
+        placeMarker(rel, lat, lng);
+        updateCoordinateFields(rel, lat, lng);
 
-        document.getElementById("podlove-location-address").value = name;
+        if (tabs[rel] && tabs[rel].map) {
+          tabs[rel].map.setView([lat, lng], locatedZoom);
+        }
 
-        var nameField = document.getElementById("podlove-location-name");
-        if (!nameField.value) {
+        var addressField = document.getElementById(
+          "podlove-location-address-" + rel
+        );
+        if (addressField) addressField.value = name;
+
+        var nameField = document.getElementById(
+          "podlove-location-name-" + rel
+        );
+        if (nameField && !nameField.value) {
           nameField.value = name.split(",")[0].trim();
+        }
+
+        // Auto-populate OSM and country fields
+        var osmField = document.getElementById(
+          "podlove-location-osm-" + rel
+        );
+        if (osmField && osm) {
+          osmField.value = osm;
+        }
+
+        var countryField = document.getElementById(
+          "podlove-location-country-" + rel
+        );
+        if (countryField && country) {
+          countryField.value = country;
         }
 
         container.innerHTML = "";
@@ -173,9 +243,9 @@
   /**
    * Reverse geocode coordinates to get an address.
    */
-  function reverseGeocode(lat, lng) {
+  function reverseGeocode(rel, lat, lng) {
     var url =
-      "https://nominatim.openstreetmap.org/reverse?format=json&lat=" +
+      "https://nominatim.openstreetmap.org/reverse?format=json&addressdetails=1&lat=" +
       lat +
       "&lon=" +
       lng;
@@ -185,12 +255,35 @@
       dataType: "json",
       success: function (data) {
         if (data && data.display_name) {
-          document.getElementById("podlove-location-address").value =
-            data.display_name;
+          var addressField = document.getElementById(
+            "podlove-location-address-" + rel
+          );
+          if (addressField) addressField.value = data.display_name;
 
-          var nameField = document.getElementById("podlove-location-name");
-          if (!nameField.value && data.display_name) {
+          var nameField = document.getElementById(
+            "podlove-location-name-" + rel
+          );
+          if (nameField && !nameField.value) {
             nameField.value = data.display_name.split(",")[0].trim();
+          }
+
+          // Auto-populate OSM and country from reverse geocode
+          if (data.osm_type && data.osm_id) {
+            var osmField = document.getElementById(
+              "podlove-location-osm-" + rel
+            );
+            if (osmField) {
+              osmField.value = osmTypePrefix(data.osm_type) + data.osm_id;
+            }
+          }
+
+          if (data.address && data.address.country_code) {
+            var countryField = document.getElementById(
+              "podlove-location-country-" + rel
+            );
+            if (countryField) {
+              countryField.value = data.address.country_code.toUpperCase();
+            }
           }
         }
       },
@@ -201,42 +294,80 @@
    * Escape HTML entities to prevent XSS in search results.
    */
   function escapeHtml(text) {
+    if (!text) return "";
     var div = document.createElement("div");
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
   }
 
   /**
+   * Switch to a tab and lazy-initialize its map.
+   */
+  function switchTab(rel) {
+    // Update tab buttons
+    $(".podlove-location-tab").removeClass("active");
+    $(".podlove-location-tab[data-tab='" + rel + "']").addClass("active");
+
+    // Update tab panels
+    $(".podlove-location-tab-panel").removeClass("active");
+    $(".podlove-location-tab-panel[data-tab='" + rel + "']").addClass("active");
+
+    // Lazy-init the map for this tab
+    initMapForRel(rel);
+  }
+
+  /**
    * Bind event listeners.
    */
   function bindEvents() {
-    $("#podlove-location-search-btn").on("click", function (e) {
+    // Tab switching
+    $(document).on("click", ".podlove-location-tab", function (e) {
       e.preventDefault();
-      var query = $("#podlove-location-search").val();
-      searchLocation(query);
+      var rel = $(this).data("tab");
+      switchTab(rel);
     });
 
-    $("#podlove-location-search").on("keypress", function (e) {
-      if (e.which === 13) {
-        e.preventDefault();
-        var query = $(this).val();
-        searchLocation(query);
+    // Search buttons
+    $(document).on("click", ".podlove-location-search-btn", function (e) {
+      e.preventDefault();
+      var rel = $(this).data("rel");
+      var query = $("#podlove-location-search-" + rel).val();
+      searchLocation(rel, query);
+    });
+
+    // Search on Enter key
+    $(document).on(
+      "keypress",
+      ".podlove-location-search-input",
+      function (e) {
+        if (e.which === 13) {
+          e.preventDefault();
+          var rel = $(this).data("rel");
+          var query = $(this).val();
+          searchLocation(rel, query);
+        }
       }
-    });
+    );
 
+    // Handle postbox toggle (meta box collapse/expand)
     $(document).on("postbox-toggled", function (e, postbox) {
-      if (postbox.id === "podlove_episode_location" && map) {
-        setTimeout(function () {
-          map.invalidateSize();
-        }, 100);
+      if (postbox.id === "podlove_episode_location") {
+        // Re-invalidate the active tab's map
+        var activeRel = $(".podlove-location-tab.active").data("tab");
+        if (activeRel && tabs[activeRel] && tabs[activeRel].map) {
+          setTimeout(function () {
+            tabs[activeRel].map.invalidateSize();
+          }, 100);
+        }
       }
     });
   }
 
   $(document).ready(function () {
-    if (document.getElementById("podlove-location-map")) {
-      initMap();
+    if (document.getElementById("podlove-episode-location-wrapper")) {
       bindEvents();
+      // Initialize the subject map immediately (it's the default active tab)
+      initMapForRel("subject");
     }
   });
 })(jQuery);
