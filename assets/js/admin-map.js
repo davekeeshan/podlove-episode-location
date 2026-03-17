@@ -217,7 +217,7 @@
         var nameField = document.getElementById(
           "podlove-location-name-" + rel
         );
-        if (nameField && !nameField.value) {
+        if (nameField) {
           nameField.value = name.split(",")[0].trim();
         }
 
@@ -267,14 +267,12 @@
             nameField.value = data.display_name.split(",")[0].trim();
           }
 
-          // Auto-populate OSM and country from reverse geocode
-          if (data.osm_type && data.osm_id) {
-            var osmField = document.getElementById(
-              "podlove-location-osm-" + rel
-            );
-            if (osmField) {
-              osmField.value = osmTypePrefix(data.osm_type) + data.osm_id;
-            }
+          // Do not infer a specific OSM object from a manually moved pin.
+          // Keep the human-readable fields current, but clear the OSM ID
+          // until the user selects an explicit search result.
+          var osmField = document.getElementById("podlove-location-osm-" + rel);
+          if (osmField) {
+            osmField.value = "";
           }
 
           if (data.address && data.address.country_code) {

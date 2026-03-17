@@ -341,7 +341,7 @@ class Meta_Box
      */
     private function save_rel($episode_id, $rel, $data)
     {
-        $location_name = sanitize_text_field($data['location_name'] ?? '');
+        $location_name = self::sanitize_location_name($data['location_name'] ?? '');
         $location_lat = self::sanitize_coordinate($data['location_lat'] ?? '', 'lat');
         $location_lng = self::sanitize_coordinate($data['location_lng'] ?? '', 'lng');
         $location_address = sanitize_text_field($data['location_address'] ?? '');
@@ -377,6 +377,26 @@ class Meta_Box
         $location->location_country = $location_country;
         $location->location_osm = $location_osm;
         $location->save();
+    }
+
+    /**
+     * Sanitize and limit the human-readable location name.
+     *
+     * The Podcasting 2.0 location spec recommends a maximum of 128 chars.
+     *
+     * @param string $value Raw input value
+     *
+     * @return string
+     */
+    private static function sanitize_location_name($value)
+    {
+        $value = sanitize_text_field($value);
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, 128);
+        }
+
+        return substr($value, 0, 128);
     }
 
     /**

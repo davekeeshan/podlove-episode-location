@@ -68,7 +68,7 @@ class Podcast_Settings extends Tab
         $raw = $_POST['podlove_podcast_location'];
 
         $data = [
-            'location_name' => sanitize_text_field($raw['location_name'] ?? ''),
+            'location_name' => self::sanitize_location_name($raw['location_name'] ?? ''),
             'location_lat' => self::sanitize_coordinate($raw['location_lat'] ?? '', 'lat'),
             'location_lng' => self::sanitize_coordinate($raw['location_lng'] ?? '', 'lng'),
             'location_address' => sanitize_text_field($raw['location_address'] ?? ''),
@@ -298,7 +298,10 @@ class Podcast_Settings extends Tab
     {
         $data = self::get_podcast_location();
 
-        return !empty($data['location_lat']) && !empty($data['location_lng']);
+        return !empty($data['location_name'])
+            || (!empty($data['location_lat']) && !empty($data['location_lng']))
+            || !empty($data['location_osm'])
+            || !empty($data['location_country']);
     }
 
     /**
@@ -314,6 +317,26 @@ class Podcast_Settings extends Tab
              WHERE option_name LIKE '_transient_podlove_cachev2_%'
                 OR option_name LIKE '_transient_timeout_podlove_cachev2_%'"
         );
+    }
+
+    /**
+     * Sanitize and limit the human-readable location name.
+     *
+     * The Podcasting 2.0 location spec recommends a maximum of 128 chars.
+     *
+     * @param string $value Raw input value
+     *
+     * @return string
+     */
+    private static function sanitize_location_name($value)
+    {
+        $value = sanitize_text_field($value);
+
+        if (function_exists('mb_substr')) {
+            return mb_substr($value, 0, 128);
+        }
+
+        return substr($value, 0, 128);
     }
 
     /**

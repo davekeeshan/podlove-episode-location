@@ -16,17 +16,8 @@ class Feed_Extension
 {
     public function __construct()
     {
-        add_action('rss2_ns', [$this, 'add_podcasting_namespace']);
         add_action('podlove_append_to_feed_head', [$this, 'add_location_to_feed_head'], 10, 3);
         add_action('podlove_append_to_feed_entry', [$this, 'add_location_to_feed_entry'], 10, 4);
-    }
-
-    /**
-     * Add the Podcasting 2.0 namespace declaration to RSS feeds.
-     */
-    public function add_podcasting_namespace()
-    {
-        echo ' xmlns:podcast="https://podcastindex.org/namespace/1.0"';
     }
 
     /**
@@ -95,14 +86,13 @@ class Feed_Extension
      */
     private static function emit_location_tag($data, $rel, $indent)
     {
-        if (empty($data['location_lat']) && empty($data['location_lng'])) {
-            return;
-        }
-
-        $geo = sprintf('geo:%s,%s', $data['location_lat'], $data['location_lng']);
         $name = !empty($data['location_name']) ? esc_html($data['location_name']) : '';
+        $attrs = sprintf('rel="%s"', esc_attr($rel));
 
-        $attrs = sprintf('rel="%s" geo="%s"', esc_attr($rel), esc_attr($geo));
+        if (!empty($data['location_lat']) && !empty($data['location_lng'])) {
+            $geo = sprintf('geo:%s,%s', $data['location_lat'], $data['location_lng']);
+            $attrs .= sprintf(' geo="%s"', esc_attr($geo));
+        }
 
         if (!empty($data['location_osm'])) {
             $attrs .= sprintf(' osm="%s"', esc_attr($data['location_osm']));
@@ -110,6 +100,11 @@ class Feed_Extension
 
         if (!empty($data['location_country'])) {
             $attrs .= sprintf(' country="%s"', esc_attr(strtoupper($data['location_country'])));
+        }
+
+        // The spec allows text-only locations, but do not emit an empty tag.
+        if ($name === '' && $attrs === sprintf('rel="%s"', esc_attr($rel))) {
+            return;
         }
 
         if ($name) {
