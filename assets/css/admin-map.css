@@ -1,0 +1,123 @@
+/* Podlove Episode Location - Admin Styles */
+
+#podlove-episode-location-wrapper {
+    padding: 10px 0;
+}
+
+/* Search section */
+.podlove-location-search-wrapper {
+    margin-bottom: 12px;
+}
+
+.podlove-location-search-wrapper label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.podlove-location-search-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.podlove-location-search-row input[type="text"] {
+    flex: 1;
+}
+
+/* Search results dropdown */
+#podlove-location-search-results {
+    position: relative;
+    z-index: 1000;
+}
+
+.podlove-location-results-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #ddd;
+    border-top: none;
+    background: #fff;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.podlove-location-result-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.podlove-location-result-item:last-child {
+    border-bottom: none;
+}
+
+.podlove-location-result-item:hover {
+    background-color: #f0f7ff;
+    color: #0073aa;
+}
+
+.podlove-location-searching,
+.podlove-location-no-results,
+.podlove-location-error {
+    padding: 8px 12px;
+    font-size: 13px;
+    color: #666;
+    border: 1px solid #ddd;
+    border-top: none;
+    background: #fff;
+}
+
+.podlove-location-error {
+    color: #a00;
+}
+
+/* Map container */
+#podlove-location-map {
+    width: 100%;
+    height: 350px;
+    border: 1px solid #ddd;
+    margin-bottom: 12px;
+    z-index: 0;
+}
+
+/* Form fields */
+.podlove-location-fields {
+    margin-top: 4px;
+}
+
+.podlove-location-field-row {
+    margin-bottom: 10px;
+}
+
+.podlove-location-field-row label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+/* Coordinates displayed side by side */
+.podlove-location-coords-row {
+    display: flex;
+    gap: 16px;
+}
+
+.podlove-location-coord {
+    flex: 1;
+}
+
+.podlove-location-coord input[type="text"] {
+    width: 100%;
+    background-color: #f7f7f7;
+}
+
+/* Hint text */
+.podlove-location-hint {
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    margin-top: 4px;
+}
