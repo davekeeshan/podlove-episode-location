@@ -263,7 +263,7 @@
           var nameField = document.getElementById(
             "podlove-location-name-" + rel
           );
-          if (nameField && !nameField.value) {
+          if (nameField) {
             nameField.value = data.display_name.split(",")[0].trim();
           }
 

@@ -57,6 +57,10 @@ class Podcast_Settings extends Tab
             return;
         }
 
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
         if (!wp_verify_nonce($_REQUEST['_podlove_nonce'] ?? '', self::$nonce)) {
             return;
         }
@@ -92,7 +96,7 @@ class Podcast_Settings extends Tab
             <?php wp_nonce_field(self::$nonce, '_podlove_nonce'); ?>
 
             <p class="podlove-location-tab-hint" style="font-style: italic; color: #666; margin-bottom: 16px;">
-                <?php esc_html_e('Set a default creator location for this podcast. This is used as a fallback when an episode does not specify its own creator location.', 'podlove-episode-location'); ?>
+                <?php esc_html_e('Set a default creator location for this podcast. It is emitted at the channel level in your RSS feed and used as a fallback in Podlove templates (e.g. {{ episode.locationCreatorName }}) when an episode has no explicit creator location.', 'podlove-episode-location'); ?>
             </p>
 
             <div id="podlove-podcast-location-wrapper">

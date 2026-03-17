@@ -9,9 +9,8 @@ if (!defined('ABSPATH')) {
 /**
  * Adds <podcast:location> tags to Podlove RSS feeds (Podcasting 2.0 namespace).
  *
- * - Channel level: emits the podcast-level default creator location.
- * - Item level: emits subject and creator locations per episode, falling back
- *   to the podcast default for creator when an episode has none.
+ * - Channel level: emits the podcast-level default creator location (if set).
+ * - Item level: emits subject and creator locations per episode when explicitly set.
  */
 class Feed_Extension
 {
@@ -51,9 +50,8 @@ class Feed_Extension
     /**
      * Output episode-level <podcast:location> tags for a feed entry.
      *
-     * For 'subject', the episode location is used as-is.
-     * For 'creator', the episode location is used if set; otherwise the
-     * podcast-level default creator location is used as a fallback.
+     * Emits subject and creator locations only when the episode has them set.
+     * The podcast default creator location is emitted at the channel level only.
      *
      * @param mixed $podcast
      * @param mixed $episode
