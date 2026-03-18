@@ -1,6 +1,6 @@
 <?php
 
-namespace PodloveEpisodeLocation;
+namespace Podlove\Modules\EpisodeLocation;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -33,11 +33,6 @@ class Module_Registration
         // Hook into the admin_init where Podlove registers its module settings.
         // We add our field to the same settings section.
         add_action('admin_init', [$this, 'register_module_field'], 20);
-
-        // Ensure our module key is preserved when Podlove saves the modules form.
-        // Podlove's form submits all module checkboxes under podlove_active_modules[].
-        // Our checkbox is already included in that array, so it will be saved
-        // automatically by WordPress's options.php handler.
     }
 
     /**
@@ -77,12 +72,10 @@ class Module_Registration
      */
     public function register_module_field()
     {
-        // Only run on the modules settings page
         if (!$this->is_modules_page()) {
             return;
         }
 
-        // Ensure the metadata group section exists
         $pagehook = 'podlove_settings_modules_handle';
 
         add_settings_section(
@@ -94,7 +87,6 @@ class Module_Registration
 
         add_settings_field(
             'podlove_setting_module_'.self::MODULE_KEY,
-            // Title: checkbox + label, matching Podlove's format
             '<input name="podlove_active_modules['.self::MODULE_KEY.']" '
                 .'id="'.self::MODULE_KEY.'" type="checkbox" '
                 .checked(self::is_active(), true, false).'>'
@@ -104,7 +96,6 @@ class Module_Registration
                     self::MODULE_NAME,
                     self::MODULE_KEY
                 ),
-            // Callback: description
             function () {
                 ?>
                 <label for="<?php echo esc_attr(self::MODULE_KEY); ?>">
@@ -115,9 +106,7 @@ class Module_Registration
                 </p>
                 <?php
             },
-            // Page
             $pagehook,
-            // Section
             'podlove_setting_module_group_'.self::MODULE_GROUP
         );
     }

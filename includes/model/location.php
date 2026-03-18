@@ -1,6 +1,6 @@
 <?php
 
-namespace PodloveEpisodeLocation;
+namespace Podlove\Modules\EpisodeLocation\Model;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
  *   - 'subject' — where the episode is about
  *   - 'creator' — where the episode was recorded
  */
-class Location_Model
+class Location
 {
     public $id;
     public $episode_id;
@@ -90,7 +90,7 @@ class Location_Model
      * @param int    $episode_id
      * @param string $rel        'subject' or 'creator'
      *
-     * @return null|Location_Model
+     * @return null|Location
      */
     public static function find_by_episode_id_and_rel($episode_id, $rel = 'subject')
     {
@@ -117,7 +117,7 @@ class Location_Model
      *
      * @param int $episode_id
      *
-     * @return Location_Model[]
+     * @return Location[]
      */
     public static function find_all_by_episode_id($episode_id)
     {
@@ -192,7 +192,7 @@ class Location_Model
      *
      * @param object $row
      *
-     * @return Location_Model
+     * @return Location
      */
     private static function from_row($row)
     {

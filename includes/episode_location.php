@@ -1,6 +1,6 @@
 <?php
 
-namespace PodloveEpisodeLocation;
+namespace Podlove\Modules\EpisodeLocation;
 
 use Podlove\Settings\Expert\Tabs;
 

@@ -1,7 +1,8 @@
 <?php
 
-namespace PodloveEpisodeLocation;
+namespace Podlove\Modules\EpisodeLocation;
 
+use Podlove\Modules\EpisodeLocation\Model\Location;
 use Podlove\Template\Episode;
 
 if (!defined('ABSPATH')) {
@@ -31,52 +32,16 @@ class Template_Extensions
             return;
         }
 
-        // Subject location accessors
-        Episode::add_accessor(
-            'locationSubjectName',
-            [__CLASS__, 'accessor_subject_name'],
-            4
-        );
-        Episode::add_accessor(
-            'locationSubjectLat',
-            [__CLASS__, 'accessor_subject_lat'],
-            4
-        );
-        Episode::add_accessor(
-            'locationSubjectLng',
-            [__CLASS__, 'accessor_subject_lng'],
-            4
-        );
-        Episode::add_accessor(
-            'locationSubjectAddress',
-            [__CLASS__, 'accessor_subject_address'],
-            4
-        );
+        Episode::add_accessor('locationSubjectName', [__CLASS__, 'accessor_subject_name'], 4);
+        Episode::add_accessor('locationSubjectLat', [__CLASS__, 'accessor_subject_lat'], 4);
+        Episode::add_accessor('locationSubjectLng', [__CLASS__, 'accessor_subject_lng'], 4);
+        Episode::add_accessor('locationSubjectAddress', [__CLASS__, 'accessor_subject_address'], 4);
 
-        // Creator location accessors
-        Episode::add_accessor(
-            'locationCreatorName',
-            [__CLASS__, 'accessor_creator_name'],
-            4
-        );
-        Episode::add_accessor(
-            'locationCreatorLat',
-            [__CLASS__, 'accessor_creator_lat'],
-            4
-        );
-        Episode::add_accessor(
-            'locationCreatorLng',
-            [__CLASS__, 'accessor_creator_lng'],
-            4
-        );
-        Episode::add_accessor(
-            'locationCreatorAddress',
-            [__CLASS__, 'accessor_creator_address'],
-            4
-        );
+        Episode::add_accessor('locationCreatorName', [__CLASS__, 'accessor_creator_name'], 4);
+        Episode::add_accessor('locationCreatorLat', [__CLASS__, 'accessor_creator_lat'], 4);
+        Episode::add_accessor('locationCreatorLng', [__CLASS__, 'accessor_creator_lng'], 4);
+        Episode::add_accessor('locationCreatorAddress', [__CLASS__, 'accessor_creator_address'], 4);
     }
-
-    // --- Subject accessors ---
 
     public static function accessor_subject_name($return, $method_name, $episode, $post, $args = [])
     {
@@ -97,8 +62,6 @@ class Template_Extensions
     {
         return self::get_field($episode->id, 'subject', 'location_address');
     }
-
-    // --- Creator accessors ---
 
     public static function accessor_creator_name($return, $method_name, $episode, $post, $args = [])
     {
@@ -134,13 +97,12 @@ class Template_Extensions
      */
     private static function get_field($episode_id, $rel, $field)
     {
-        $location = Location_Model::find_by_episode_id_and_rel($episode_id, $rel);
+        $location = Location::find_by_episode_id_and_rel($episode_id, $rel);
 
         if ($location && isset($location->{$field}) && $location->{$field} !== '') {
             return $location->{$field};
         }
 
-        // Fall back to podcast default for creator location only.
         if ($rel === 'creator' && Podcast_Settings::has_podcast_location()) {
             $podcast_data = Podcast_Settings::get_podcast_location();
 

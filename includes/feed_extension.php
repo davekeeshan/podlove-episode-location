@@ -1,6 +1,8 @@
 <?php
 
-namespace PodloveEpisodeLocation;
+namespace Podlove\Modules\EpisodeLocation;
+
+use Podlove\Modules\EpisodeLocation\Model\Location;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -51,8 +53,7 @@ class Feed_Extension
      */
     public function add_location_to_feed_entry($podcast, $episode, $feed, $format)
     {
-        // Subject location — episode only, no fallback.
-        $subject = Location_Model::find_by_episode_id_and_rel($episode->id, 'subject');
+        $subject = Location::find_by_episode_id_and_rel($episode->id, 'subject');
         if ($subject && (!empty($subject->location_lat) || !empty($subject->location_lng))) {
             self::emit_location_tag([
                 'location_name' => $subject->location_name,
@@ -63,9 +64,7 @@ class Feed_Extension
             ], 'subject', "\n\t\t");
         }
 
-        // Creator location — episode only; the podcast default is emitted
-        // at the channel level and does not repeat in each item.
-        $creator = Location_Model::find_by_episode_id_and_rel($episode->id, 'creator');
+        $creator = Location::find_by_episode_id_and_rel($episode->id, 'creator');
         if ($creator && (!empty($creator->location_lat) || !empty($creator->location_lng))) {
             self::emit_location_tag([
                 'location_name' => $creator->location_name,
@@ -102,7 +101,6 @@ class Feed_Extension
             $attrs .= sprintf(' country="%s"', esc_attr(strtoupper($data['location_country'])));
         }
 
-        // The spec allows text-only locations, but do not emit an empty tag.
         if ($name === '' && $attrs === sprintf('rel="%s"', esc_attr($rel))) {
             return;
         }

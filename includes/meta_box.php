@@ -1,8 +1,9 @@
 <?php
 
-namespace PodloveEpisodeLocation;
+namespace Podlove\Modules\EpisodeLocation;
 
 use Podlove\Model\Episode;
+use Podlove\Modules\EpisodeLocation\Model\Location;
 
 if (!defined('ABSPATH')) {
     exit;
@@ -123,7 +124,6 @@ class Meta_Box
             return;
         }
 
-        // Leaflet CSS
         wp_enqueue_style(
             'leaflet',
             'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
@@ -131,7 +131,6 @@ class Meta_Box
             '1.9.4'
         );
 
-        // Leaflet JS
         wp_enqueue_script(
             'leaflet',
             'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
@@ -140,7 +139,6 @@ class Meta_Box
             true
         );
 
-        // Plugin CSS
         wp_enqueue_style(
             'podlove-episode-location-admin',
             PODLOVE_EPISODE_LOCATION_URL.'assets/css/admin-map.css',
@@ -148,7 +146,6 @@ class Meta_Box
             PODLOVE_EPISODE_LOCATION_VERSION
         );
 
-        // Plugin JS
         wp_enqueue_script(
             'podlove-episode-location-admin',
             PODLOVE_EPISODE_LOCATION_URL.'assets/js/admin-map.js',
@@ -317,7 +314,7 @@ class Meta_Box
             return $defaults;
         }
 
-        $location = Location_Model::find_by_episode_id_and_rel($episode->id, $rel);
+        $location = Location::find_by_episode_id_and_rel($episode->id, $rel);
         if (!$location) {
             return $defaults;
         }
@@ -348,12 +345,10 @@ class Meta_Box
         $location_country = sanitize_text_field($data['location_country'] ?? '');
         $location_osm = sanitize_text_field($data['location_osm'] ?? '');
 
-        // Ensure country code is uppercase and max 2 chars
         $location_country = strtoupper(substr($location_country, 0, 2));
 
-        $location = Location_Model::find_by_episode_id_and_rel($episode_id, $rel);
+        $location = Location::find_by_episode_id_and_rel($episode_id, $rel);
 
-        // If all fields are empty, delete existing record
         if (empty($location_name) && empty($location_lat) && empty($location_lng)
             && empty($location_address) && empty($location_country) && empty($location_osm)
         ) {
@@ -365,7 +360,7 @@ class Meta_Box
         }
 
         if (!$location) {
-            $location = new Location_Model();
+            $location = new Location();
             $location->episode_id = $episode_id;
             $location->rel = $rel;
         }
@@ -418,7 +413,6 @@ class Meta_Box
         if (is_numeric($value)) {
             $float = (float) $value;
 
-            // Basic range checks to avoid obviously invalid coordinates.
             if ($type === 'lat' && ($float < -90 || $float > 90)) {
                 if (defined('WP_DEBUG') && WP_DEBUG) {
                     error_log(
