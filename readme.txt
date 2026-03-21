@@ -4,7 +4,7 @@ Tags: podcast, podlove, location, map, openstreetmap
 Requires at least: 5.0
 Tested up to: 6.7
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.0.2
 License: MIT
 License URI: https://opensource.org/licenses/MIT
 
@@ -75,7 +75,15 @@ Yes. Use the Clear Location button in the episode editor or podcast settings to 
 
 Yes, if the Podlove **Import/Export** module is enabled. The plugin hooks `podlove_xml_export` to add an `episode_locations` section. The podcast default location option (`podlove_episode_location_podcast`) is included automatically with other `podlove_*` options in Publisher’s export.
 
+= Multisite: I network-activated the plugin but subsites do not show the module or meta box. =
+
+Network activation used to run setup only on the main site. **Update to 1.0.2+**, then load any wp-admin page once (or network deactivate and network activate again). The plugin bootstraps every site: creates the per-site table and adds `episode_location_external` to each site’s `podlove_active_modules`. **Podlove Publisher must still be active on each subsite** where you use Episode Location (network-activate Publisher or activate it per site).
+
 == Changelog ==
+
+= 1.0.2 =
+* Multisite: network activation (and new sites) run per-site setup — DB table + module enabled in `podlove_active_modules` on every blog
+* One-time migration for networks that already network-activated an older release (runs on first request after update)
 
 = 1.0.1 =
 * Podlove Publisher export/import: `episode_locations` / `episode_location` XML; import job restores the `podlove_episode_location` table after core import jobs

@@ -3,7 +3,7 @@
  * Plugin Name: Podlove Episode Location
  * Plugin URI:  https://github.com/davekeeshan/podlove-episode-location
  * Description: Adds dual episode location (subject & creator) with interactive maps to Podlove Publisher. Registers as a Podlove module.
- * Version:     1.0.0
+ * Version:     1.0.2
  * Author:      Dave Keeshan
  * Author URI:  https://github.com/davekeeshan
  * License:     MIT
@@ -21,10 +21,101 @@ use Podlove\Modules\EpisodeLocation\Episode_Location;
 use Podlove\Modules\EpisodeLocation\Model\Location;
 use Podlove\Modules\EpisodeLocation\Module_Registration;
 
-define('PODLOVE_EPISODE_LOCATION_VERSION', '1.0.0');
+define('PODLOVE_EPISODE_LOCATION_VERSION', '1.0.2');
 define('PODLOVE_EPISODE_LOCATION_FILE', __FILE__);
 define('PODLOVE_EPISODE_LOCATION_DIR', plugin_dir_path(__FILE__));
 define('PODLOVE_EPISODE_LOCATION_URL', plugin_dir_url(__FILE__));
+define(
+    'PODLOVE_EPISODE_LOCATION_BASENAME',
+    plugin_basename(PODLOVE_EPISODE_LOCATION_FILE)
+);
+
+/**
+ * Per-site activation work: DB table + enable module in podlove_active_modules.
+ *
+ * Must run in the correct blog context (use switch_to_blog for multisite).
+ */
+function podlove_episode_location_activate_current_site()
+{
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/model/location.php';
+    Location::build();
+
+    if (podlove_episode_location_is_replaced_by_native_module()) {
+        return;
+    }
+
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/module_registration.php';
+    Module_Registration::activate();
+}
+
+/**
+ * One-time fix: network activation used to run only on the main site, so subsites
+ * never got the module flag in podlove_active_modules and the plugin stayed "off".
+ */
+function podlove_episode_location_maybe_migrate_multisite_network()
+{
+    if (!is_multisite()) {
+        return;
+    }
+
+    if (!function_exists('is_plugin_active_for_network')
+        || !is_plugin_active_for_network(PODLOVE_EPISODE_LOCATION_BASENAME)) {
+        return;
+    }
+
+    if (get_site_option('podlove_episode_location_network_sites_bootstrapped')) {
+        return;
+    }
+
+    foreach (get_sites(['number' => 0]) as $site) {
+        switch_to_blog((int) $site->blog_id);
+        podlove_episode_location_activate_current_site();
+        restore_current_blog();
+    }
+
+    update_site_option('podlove_episode_location_network_sites_bootstrapped', '1');
+}
+add_action('plugins_loaded', 'podlove_episode_location_maybe_migrate_multisite_network', 5);
+
+/**
+ * When a new site is added to the network, repeat per-site setup if we are network-active.
+ *
+ * @param \WP_Site $new_site New site object (WP 5.1+).
+ */
+function podlove_episode_location_on_initialize_site($new_site)
+{
+    if (!is_multisite()
+        || !function_exists('is_plugin_active_for_network')
+        || !is_plugin_active_for_network(PODLOVE_EPISODE_LOCATION_BASENAME)) {
+        return;
+    }
+
+    switch_to_blog((int) $new_site->blog_id);
+    podlove_episode_location_activate_current_site();
+    restore_current_blog();
+}
+// New site in a network (WP 5.1+). WP 5.0 fallback: wpmu_new_blog.
+if (version_compare($GLOBALS['wp_version'], '5.1', '>=')) {
+    add_action('wp_initialize_site', 'podlove_episode_location_on_initialize_site', 10, 1);
+} else {
+    add_action('wpmu_new_blog', 'podlove_episode_location_on_wpmu_new_blog', 10, 6);
+}
+
+/**
+ * @param int $blog_id
+ */
+function podlove_episode_location_on_wpmu_new_blog($blog_id)
+{
+    if (!is_multisite()
+        || !function_exists('is_plugin_active_for_network')
+        || !is_plugin_active_for_network(PODLOVE_EPISODE_LOCATION_BASENAME)) {
+        return;
+    }
+
+    switch_to_blog((int) $blog_id);
+    podlove_episode_location_activate_current_site();
+    restore_current_blog();
+}
 
 /**
  * Check if Podlove Publisher is active before loading.
@@ -127,19 +218,23 @@ function podlove_episode_location_init()
 add_action('plugins_loaded', 'podlove_episode_location_init', 20);
 
 /**
- * Create database table on plugin activation.
+ * Create database table on plugin activation and enable the Podlove module on this site.
+ *
+ * @param bool $network_wide True when activated from Network Admin for the whole network.
  */
-function podlove_episode_location_activate()
+function podlove_episode_location_activate($network_wide = false)
 {
-    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/model/location.php';
-    Location::build();
+    if ($network_wide && is_multisite()) {
+        foreach (get_sites(['number' => 0]) as $site) {
+            switch_to_blog((int) $site->blog_id);
+            podlove_episode_location_activate_current_site();
+            restore_current_blog();
+        }
+        update_site_option('podlove_episode_location_network_sites_bootstrapped', '1');
 
-    if (podlove_episode_location_is_replaced_by_native_module()) {
         return;
     }
 
-    // Auto-enable the module in Podlove's active modules list on first activation
-    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/module_registration.php';
-    Module_Registration::activate();
+    podlove_episode_location_activate_current_site();
 }
 register_activation_hook(__FILE__, 'podlove_episode_location_activate');

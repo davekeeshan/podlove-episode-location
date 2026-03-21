@@ -26,6 +26,10 @@ A standalone WordPress plugin that adds dual episode location support (subject &
 - PHP 7.4+
 - [Podlove Publisher](https://wordpress.org/plugins/podlove-podcasting-plugin-for-wordpress/) plugin (must be installed and active)
 
+### Multisite
+
+You can **network-activate** this plugin; from **1.0.2** onward, setup runs on **every site** (database table + enabling the module in each site’s `podlove_active_modules`). **Podlove Publisher must still be active on each subsite** where you want Episode Location (network-activate Publisher or activate it per site).
+
 ## Installation
 
 1. Download the latest release from [GitHub Releases](https://github.com/davekeeshan/podlove-episode-location/releases)
