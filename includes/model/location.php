@@ -137,6 +137,40 @@ class Location
     }
 
     /**
+     * All location rows (for Publisher export).
+     *
+     * @return Location[]
+     */
+    public static function all()
+    {
+        global $wpdb;
+
+        $table = self::table_name();
+        $rows = $wpdb->get_results("SELECT * FROM {$table} ORDER BY id ASC");
+
+        if (!$rows) {
+            return [];
+        }
+
+        $locations = [];
+        foreach ($rows as $row) {
+            $locations[] = self::from_row($row);
+        }
+
+        return $locations;
+    }
+
+    /**
+     * Remove all location rows (used before Publisher import).
+     */
+    public static function delete_all()
+    {
+        global $wpdb;
+
+        $wpdb->query('DELETE FROM '.self::table_name());
+    }
+
+    /**
      * Save the current record (insert or update).
      */
     public function save()

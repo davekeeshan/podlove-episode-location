@@ -28,6 +28,7 @@ Features:
 * **Clear Location** — Reset a location entirely from the episode editor or podcast settings
 * **Template Tags** — Access both location types in Podlove templates; creator tags fall back to the podcast default when an episode has none
 * **Podcasting 2.0 Feed** — Emits `<podcast:location>` tags at channel and item level with rel, geo, osm, and country attributes when available
+* **Publisher Import/Export** — When the Podlove Import/Export module is active, episode location rows are included in Publisher exports and restored on import (podcast-level option is already covered by Publisher’s options export)
 
 **Requires Podlove Publisher** to be installed and active.
 
@@ -70,7 +71,14 @@ The OSM ID is captured when you choose an explicit search result. If you manuall
 
 Yes. Use the Clear Location button in the episode editor or podcast settings to remove the current location. If all fields are empty when saved, the location is removed.
 
+= Are episode locations included in Podlove’s backup export? =
+
+Yes, if the Podlove **Import/Export** module is enabled. The plugin hooks `podlove_xml_export` to add an `episode_locations` section. The podcast default location option (`podlove_episode_location_podcast`) is included automatically with other `podlove_*` options in Publisher’s export.
+
 == Changelog ==
+
+= 1.0.1 =
+* Podlove Publisher export/import: `episode_locations` / `episode_location` XML; import job restores the `podlove_episode_location` table after core import jobs
 
 = 1.0.0 =
 * Registers as a Podlove module on the Modules settings page

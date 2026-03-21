@@ -56,11 +56,50 @@ function podlove_episode_location_missing_dependency_notice()
 }
 
 /**
+ * Detect if the native Podlove Publisher Locations module has replaced this plugin.
+ */
+function podlove_episode_location_is_replaced_by_native_module()
+{
+    if (!class_exists('\Podlove\Modules\Base')) {
+        return false;
+    }
+
+    return \Podlove\Modules\Base::is_active('locations');
+}
+
+/**
+ * Show admin notice when the native Locations module has taken over.
+ */
+function podlove_episode_location_replaced_notice()
+{
+    if (!current_user_can('activate_plugins')) {
+        return;
+    }
+    ?>
+    <div class="notice notice-warning">
+        <p>
+            <strong><?php esc_html_e('Podlove Episode Location', 'podlove-episode-location'); ?>:</strong>
+            <?php esc_html_e('The native Podlove Publisher Locations module is active and now takes precedence over this standalone plugin while using the same stored data.', 'podlove-episode-location'); ?>
+            <a href="<?php echo esc_url(admin_url('plugins.php')); ?>">
+                <?php esc_html_e('Deactivate this plugin', 'podlove-episode-location'); ?>
+            </a>
+        </p>
+    </div>
+    <?php
+}
+
+/**
  * Initialize the plugin after all plugins are loaded.
  */
 function podlove_episode_location_init()
 {
     if (!podlove_episode_location_check_dependencies()) {
+        return;
+    }
+
+    if (podlove_episode_location_is_replaced_by_native_module()) {
+        add_action('admin_notices', 'podlove_episode_location_replaced_notice');
+
         return;
     }
 
@@ -79,6 +118,8 @@ function podlove_episode_location_init()
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/template_extensions.php';
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/feed_extension.php';
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/podcast_settings.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/podcast-import-episode-locations-job.php';
+    require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/export_import.php';
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/episode_location.php';
 
     Episode_Location::instance();
@@ -92,6 +133,10 @@ function podlove_episode_location_activate()
 {
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/model/location.php';
     Location::build();
+
+    if (podlove_episode_location_is_replaced_by_native_module()) {
+        return;
+    }
 
     // Auto-enable the module in Podlove's active modules list on first activation
     require_once PODLOVE_EPISODE_LOCATION_DIR.'includes/module_registration.php';

@@ -20,6 +20,7 @@ class Episode_Location
         new Meta_Box();
         new Template_Extensions();
         new Feed_Extension();
+        new Export_Import();
 
         Podcast_Settings::register_early_hooks();
         add_filter('podlove_podcast_settings_tabs', [$this, 'register_podcast_settings_tab']);

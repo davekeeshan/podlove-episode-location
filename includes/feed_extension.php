@@ -54,7 +54,7 @@ class Feed_Extension
     public function add_location_to_feed_entry($podcast, $episode, $feed, $format)
     {
         $subject = Location::find_by_episode_id_and_rel($episode->id, 'subject');
-        if ($subject && (!empty($subject->location_lat) || !empty($subject->location_lng))) {
+        if ($subject && self::has_location_data($subject)) {
             self::emit_location_tag([
                 'location_name' => $subject->location_name,
                 'location_lat' => $subject->location_lat,
@@ -65,7 +65,7 @@ class Feed_Extension
         }
 
         $creator = Location::find_by_episode_id_and_rel($episode->id, 'creator');
-        if ($creator && (!empty($creator->location_lat) || !empty($creator->location_lng))) {
+        if ($creator && self::has_location_data($creator)) {
             self::emit_location_tag([
                 'location_name' => $creator->location_name,
                 'location_lat' => $creator->location_lat,
@@ -74,6 +74,21 @@ class Feed_Extension
                 'location_country' => $creator->location_country,
             ], 'creator', "\n\t\t");
         }
+    }
+
+    /**
+     * Check whether a location contains enough data to emit a tag.
+     *
+     * @param Location $location
+     *
+     * @return bool
+     */
+    private static function has_location_data($location)
+    {
+        return !empty($location->location_name)
+            || (!empty($location->location_lat) && !empty($location->location_lng))
+            || !empty($location->location_osm)
+            || !empty($location->location_country);
     }
 
     /**
